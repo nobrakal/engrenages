@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/python3
 
 """ 
 A simple echo server 
@@ -13,9 +13,11 @@ size = 1024
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 s.bind((host,port)) 
 s.listen(backlog) 
+client, address = s.accept() 
 while 1: 
-    client, address = s.accept() 
-    data = client.recv(size) 
-    if data: 
-        client.send(data) 
-    client.close()
+	data = client.recv(size) 
+	if data.decode() == "exit\r\n":
+		client.close()
+		break
+	elif data: 
+		client.send(data)
