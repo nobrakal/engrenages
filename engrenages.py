@@ -164,4 +164,4 @@ time.sleep(2)
 
 client.ConnectNewServer("78.205.80.129")
 msg = input("Entrez votre message : ")
-sendTimedMessage(msg,serveur.getSocketList())
+sendTimedMessage(msg,client.socket_list)
