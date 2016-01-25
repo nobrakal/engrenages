@@ -49,6 +49,9 @@ class Serveur():
 
 	def startServeur(self):
 		"""Code à exécuter pendant l'exécution du serveur."""
+		self.newsocket, self.addr = self.s.accept() # Attends la connection du client
+		self.socket_list.append(self.newsocket)
+		print("Client local connecté")
 		while 1:
 			# prend une liste des socket prêt à être lu.
 			self.ready_to_read,self.ready_to_write,self.in_error = select.select(self.socket_list,[],[])
@@ -58,11 +61,15 @@ class Serveur():
 					self.newsocket, self.addr = self.s.accept()
 					print ("Client connecté")
 
-					if len(self.socket_list) != 1: # Cas où il ne reste plus qu'un seul socket, le notre, on n'envoit donc aucune adresse
+					# On envoi l'adresse du client à notre client, pour qu'il puisse se connecter au serveur.
+					self.socket_list[1].send(pickle.dumps(self.newsocket.getpeername()))
+
+
+					if len(self.socket_list) != 0: # Cas où il ne reste plus qu'un seul socket, le notre, on n'envoit donc aucune adresse
 						for self.active_sock in self.socket_list[1:]: # On envoi la liste des ip des connectés, sauf la notre
 							self.active_sock_list.append(self.active_sock.getpeername())					
 						self.newsocket.send(pickle.dumps(self.active_sock_list))
-
+				
 					self.socket_list.append(self.newsocket)
 	
 				# Un message d'un client existant
@@ -122,6 +129,9 @@ class Client():
 						self.ip_list = pickle.loads(self.data)
 						for self.ip2connect in self.sock_list: # On s'y connecte
 							self.c.connect((ip2connect,port_serveur))
+
+					elif len(self.data) < 26: # Cas de reception d'une ip
+						self.ConnectNewServer(self.data) # On s'y connecte
 						
 					elif self.data[:26] not in id_list: # Les 26 premiers charactères correspondent à la date
 							print(self.data[26:])
