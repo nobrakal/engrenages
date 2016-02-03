@@ -10,6 +10,7 @@ import threading
 import datetime
 import pickle
 import time
+from tkinter import *
 
 port_serveur = 6666
 port_client = 6667
@@ -94,13 +95,11 @@ class Serveur():
 					print("Fermeture, plus aucun client connecté")
 					self.s.close()
 					return 0
-	def getSocketList(self):
-		return self.socket_list
 
 class Client():
-	"""Class chargée du client"""
+	"""Class chargée du client. Prend en argument le serveur local."""
 
-	def __init__(self):
+	def __init__(self, serveur):
 		self.socket_list = []
 
 		self.c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -165,13 +164,57 @@ class Client():
 		except Exception as e: 
 			print("Quelque chose c'est mal passé avec %s:%d. l'exception est %s" % (self.ip,port_serveur, e))
 
+# Création de la fenêtre principale
+Authentification = Tk()
+Authentification.title('Engrenages')
+Authentification.geometry('410x170')
+Authentification['bg']='bisque' # couleur de fond
 
+
+#Création de deux sous-fenêtres
+Frame1 = Frame(Authentification,borderwidth=2,relief=GROOVE)
+Frame1.pack(padx=10,pady=10)
+
+Frame2 = Frame(Authentification,borderwidth=2,relief=GROOVE)
+Frame2.pack(padx=10,pady=10)
+
+
+# Création d'un widget Label (texte 'Veuillez entrer votre Pseudo !')
+Label1 = Label(Frame1, text = 'Veuillez entrer votre Pseudo', fg = 'black', bg='lightgrey')
+Label1.pack(padx=5,pady=5) #positionne le widget Label1
+
+
+#crée le champ de saisie pour entrer le pseudo
+Pseudo= StringVar()
+Champ = Entry(Frame1, textvariable= Pseudo, bg ='white', fg='grey')
+Champ.focus_set()
+Champ.pack(padx=5, pady=5)
+
+
+# Création d'un widget Label (texte 'Que souhaitez-vous faire?')
+Label2 = Label(Frame2, text = 'Que souhaitez-vous faire?', fg = 'black', bg='lightgrey')
+Label2.pack(pady=5)
+
+
+Bouton1 = Button(Frame2, text = 'Rejoindre un serveur existant', command = Authentification.destroy) #***********
+Bouton1.pack(side=LEFT, padx = 5, pady=5)
+
+
+Bouton2 = Button(Frame2, text = 'Créer un nouveau serveur', command = Authentification.destroy) #************
+Bouton2.pack(side=LEFT, padx = 5, pady=5)
+
+
+# Création d'un bouton quitter
+Bouton3 = Button(Frame2, text = 'Quitter', command = Authentification.destroy)
+Bouton3.pack(side=LEFT, padx = 5, pady=5)
+
+# Lancement du gestionnaire d'événements
+Authentification.mainloop()
 
 serveur = Serveur()
 time.sleep(2)
-client = Client()
-time.sleep(2)
+client = Client(serveur)
 
-client.ConnectNewServer("78.205.80.129")
-msg = input("Entrez votre message : ")
-sendTimedMessage(msg,client.socket_list)
+#client.ConnectNewServer("78.205.80.129")
+#msg = input("Entrez votre message : ")
+#sendTimedMessage(msg,client.socket_list)
