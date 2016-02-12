@@ -28,7 +28,7 @@ def sendTimedMessage(msg, socket_list,client):
 def sendMessage(msg, socket_list):
 	"""Envoi un message à la liste de socket"""
 	for sock in socket_list:
-		sock.send(msg) # Envoi du message.
+		sock.send(pickle.dumps(msg)) # Envoi du message.
 
 class Serveur():
 	"""Class chargée du serveur."""
