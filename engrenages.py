@@ -20,15 +20,15 @@ size = 1024
 
 def sendTimedMessage(msg, socket_list,client):
 	"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste."""
+	time = str(datetime.datetime.now())
+	client.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
 	for sock in socket_list[1:]:
-		time = str(datetime.datetime.now())
-		client.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
-		sock.send(pickle.dumps((time+msg))) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
+		sock.send(pickle.dumps([time,msg,client.pseudo])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
 
 def sendMessage(msg, socket_list):
 	"""Envoi un message à la liste de socket"""
 	for sock in socket_list:
-		sock.send(pickle.dumps(msg)) # Envoi du message (réencodé).
+		sock.send(msg) # Envoi du message.
 
 class Serveur():
 	"""Class chargée du serveur."""
@@ -83,7 +83,9 @@ class Serveur():
 class Client():
 	"""Class chargée du client. Prend en argument le serveur local."""
 
-	def __init__(self):
+	def __init__(self, pseudo):
+		self.pseudo = pseudo
+	
 		self.socket_list = []
 		self.id_list=[]  
 
@@ -104,13 +106,11 @@ class Client():
 			if data:
 	                	# Des données sont arrivées
 				data = pickle.loads(data) # Décodage de ces données
-				if len(data) < 26: # Cas de reception d'une ip
-					self.ConnectNewServer(data) # On s'y connecte
-					
-				elif data[:26] not in self.id_list: # Les 26 premiers charactères correspondent à la date
-						print(data[26:]) # Affiche le message
-						self.id_list.append(data[:26]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
-						sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+
+				if data[0] not in self.id_list: # Les 26 premiers charactères correspondent à la date
+					print(data[2]+": "+data[1]) # Affiche le message
+					self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
+					sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 	def ConnectNewServer(self, ip, port=port_serveur):
 
@@ -176,7 +176,7 @@ Authentification.mainloop()
 
 serveur = Serveur()
 time.sleep(2)
-client = Client()
+client = Client("Moi")
 time.sleep(2)
 
 client.ConnectNewServer("78.205.80.129")
