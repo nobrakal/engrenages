@@ -18,24 +18,74 @@ port_client = 6667
 backlog = 10 # Nombre de connections maximum
 size = 1024 
 
-def sendTimedMessage(msg, socket_list,client):
-	"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste."""
+def sendTimedMessage(msg, socket_list,client, private=""):
+	"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste. Si private est défini, le message ne sera lu que par la personne
+	portant le pseudo mis dans private"""
 	time = str(datetime.datetime.now())
 	client.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
-	for sock in socket_list[1:]:
-		sock.send(pickle.dumps([time,msg,client.pseudo])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
+	for sock in socket_list:
+		sock.send(pickle.dumps([time,msg,client.pseudo,private])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
 
 def sendMessage(msg, socket_list):
 	"""Envoi un message à la liste de socket"""
 	for sock in socket_list:
 		sock.send(pickle.dumps(msg)) # Envoi du message.
 
+def graphical(Authentification):
+	# Création de la fenêtre principale
+	Authentification.title('Engrenages')
+	Authentification.geometry('410x170')
+	Authentification['bg']='bisque' # couleur de fond
+	
+	
+	#Création de deux sous-fenêtres
+	Frame1 = Frame(Authentification,borderwidth=2,relief=GROOVE)	
+	Frame1.pack(padx=10,pady=10)
+
+	Frame2 = Frame(Authentification,borderwidth=2,relief=GROOVE)
+	Frame2.pack(padx=10,pady=10)
+
+
+	# Création d'un widget Label (texte 'Veuillez entrer votre Pseudo !')
+	Label1 = Label(Frame1, text = 'Veuillez entrer votre Pseudo', fg = 'black', bg='lightgrey')
+	Label1.pack(padx=5,pady=5) #positionne le widget Label1
+
+
+	#crée le champ de saisie pour entrer le pseudo
+	Pseudo= StringVar()
+	Champ = Entry(Frame1, textvariable= Pseudo, bg ='white', fg='grey')
+	Champ.focus_set()
+	Champ.pack(padx=5, pady=5)
+
+
+	# Création d'un widget Label (texte 'Que souhaitez-vous faire?')
+	Label2 = Label(Frame2, text = 'Que souhaitez-vous faire?', fg = 'black', bg='lightgrey')
+	Label2.pack(pady=5)
+	
+
+	Bouton1 = Button(Frame2, text = 'Rejoindre un serveur existant', command = Authentification.destroy) #***********
+	Bouton1.pack(side=LEFT, padx = 5, pady=5)
+	
+
+	Bouton2 = Button(Frame2, text = 'Créer un nouveau serveur', command = Authentification.destroy) #************
+	Bouton2.pack(side=LEFT, padx = 5, pady=5)
+	
+
+	# Création d'un bouton quitter
+	Bouton3 = Button(Frame2, text = 'Quitter', command = Authentification.destroy)
+	Bouton3.pack(side=LEFT, padx = 5, pady=5)
+
+	return Authentification
+
+
+
 class Serveur():
 	"""Class chargée du serveur."""
 
-	def __init__(self):
+	def __init__(self, pseudo):
 		self.socket_list = []
-		self.active_sock_list = []
+		
+		self.pseudo = pseudo
 
 		self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -61,6 +111,7 @@ class Serveur():
 					newsocket, addr = self.s.accept()
 					print ("SERVEUR: Client connecté, d'adresse: "+str(addr))
 					self.socket_list.append(newsocket)
+					self.socket_list[1].send(pickle.dumps(addr)) # Envoi de l'ip à notre client local pour qu'il puisse se connecter
 	
 				# Un message d'un client existant
 				else: 
@@ -87,7 +138,7 @@ class Client():
 		self.pseudo = pseudo
 	
 		self.socket_list = []
-		self.id_list=[]  
+		self.id_list=[]
 
 		self.c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -107,10 +158,20 @@ class Client():
 	                	# Des données sont arrivées
 				data = pickle.loads(data) # Décodage de ces données
 
-				if data[0] not in self.id_list: # Les 26 premiers charactères correspondent à la date
-					print(data[2]+": "+data[1]) # Affiche le message
+				if data[0] not in self.id_list: # data[0] correspond à l'id du message
 					self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
-					sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+					if type(data) is tuple:
+						self.ConnectNewServer(data[0]) # Reception de l'ip, on se connecte
+
+					elif data[3] == "": # Message non privé
+						print(data[2]+": "+data[1]) # Affiche le message
+						sendMessage(data, self.socket_list[1:]+self.serveur.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+
+					else: #Il s'agit d'un message privé
+						if data[3] == pseudo: # Qui nous est destiné
+							print(data[2]+" vous chuchote: "+data[1]) # Affiche le message
+						else: # Pas pour nous, on le fait tourner
+							sendMessage(data, self.socket_list[1:])
 
 	def ConnectNewServer(self, ip, port=port_serveur):
 
@@ -126,59 +187,23 @@ class Client():
 		except Exception as e: 
 			print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port_serveur, e))
 
-# Création de la fenêtre principale
 Authentification = Tk()
-Authentification.title('Engrenages')
-Authentification.geometry('410x170')
-Authentification['bg']='bisque' # couleur de fond
 
-
-#Création de deux sous-fenêtres
-Frame1 = Frame(Authentification,borderwidth=2,relief=GROOVE)
-Frame1.pack(padx=10,pady=10)
-
-Frame2 = Frame(Authentification,borderwidth=2,relief=GROOVE)
-Frame2.pack(padx=10,pady=10)
-
-
-# Création d'un widget Label (texte 'Veuillez entrer votre Pseudo !')
-Label1 = Label(Frame1, text = 'Veuillez entrer votre Pseudo', fg = 'black', bg='lightgrey')
-Label1.pack(padx=5,pady=5) #positionne le widget Label1
-
-
-#crée le champ de saisie pour entrer le pseudo
-Pseudo= StringVar()
-Champ = Entry(Frame1, textvariable= Pseudo, bg ='white', fg='grey')
-Champ.focus_set()
-Champ.pack(padx=5, pady=5)
-
-
-# Création d'un widget Label (texte 'Que souhaitez-vous faire?')
-Label2 = Label(Frame2, text = 'Que souhaitez-vous faire?', fg = 'black', bg='lightgrey')
-Label2.pack(pady=5)
-
-
-Bouton1 = Button(Frame2, text = 'Rejoindre un serveur existant', command = Authentification.destroy) #***********
-Bouton1.pack(side=LEFT, padx = 5, pady=5)
-
-
-Bouton2 = Button(Frame2, text = 'Créer un nouveau serveur', command = Authentification.destroy) #************
-Bouton2.pack(side=LEFT, padx = 5, pady=5)
-
-
-# Création d'un bouton quitter
-Bouton3 = Button(Frame2, text = 'Quitter', command = Authentification.destroy)
-Bouton3.pack(side=LEFT, padx = 5, pady=5)
+Authentification = graphical(Authentification)
 
 # Lancement du gestionnaire d'événements
 Authentification.mainloop()
 
+pseudo="Moi"
 
-serveur = Serveur()
+serveur = Serveur(pseudo)
 time.sleep(2)
-client = Client("Moi")
+client = Client(pseudo)
 time.sleep(2)
 
-client.ConnectNewServer("78.205.80.129")
+client.ConnectNewServer("192.168.1.43")
 msg = input("Entrez votre message : ")
-sendTimedMessage(msg,client.socket_list,client)
+sendTimedMessage(msg,client.socket_list[1:],client) # Message public
+
+msg = input("Entrez votre message : ")
+sendTimedMessage(msg,client.socket_list[1:],client, "Moi") # Message privé
