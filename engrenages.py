@@ -18,13 +18,13 @@ port_client = 6667
 backlog = 10 # Nombre de connections maximum
 size = 1024 
 
-def sendTimedMessage(msg, socket_list,client, private=""):
-	"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste. Si private est défini, le message ne sera lu que par la personne
-	portant le pseudo mis dans private"""
+def sendTimedMessage(msg, socket_list,client, destinataire=""):
+	"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste. Si destinataire est défini, le message ne sera lu que par la personne
+	portant le pseudo mis dans destinataire"""
 	time = str(datetime.datetime.now())
 	client.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
 	for sock in socket_list:
-		sock.send(pickle.dumps([time,msg,client.pseudo,private])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
+		sock.send(pickle.dumps([time,msg,client.pseudo,destinataire])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
 
 def sendMessage(msg, socket_list):
 	"""Envoi un message à la liste de socket"""
@@ -87,6 +87,8 @@ class Serveur():
 		
 		self.pseudo = pseudo
 
+		self.ip_list = []
+
 		self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self.s.bind(('',port_serveur)) 
@@ -109,9 +111,18 @@ class Serveur():
 				# Une nouvelle connection!
 				if sock == self.s: 
 					newsocket, addr = self.s.accept()
-					print ("SERVEUR: Client connecté, d'adresse: "+str(addr))
 					self.socket_list.append(newsocket)
-					self.socket_list[1].send(pickle.dumps(addr)) # Envoi de l'ip à notre client local pour qu'il puisse se connecter
+					if addr[0] not in self.ip_list:
+						self.ip_list.append(addr[0])
+						self.socket_list[1].send(pickle.dumps(addr)) # Envoi de l'ip à notre client local pour qu'il puisse se connecter
+
+					data = self.socket_list[-1].recv(size) # Attends l'envoi du pseudo du dernier socket ajouté à la liste
+					if data:
+						self.socket_list[1].send(data) # Envoi le pseudo à notre client
+						print ("SERVEUR: Client connecté, d'adresse: "+str(addr[0]))
+					else:
+						print ("SERVEUR: Client connecté, d'adresse: "+str(addr[0])+"mais pseudo non reçu. SUPRESSION DE LA CONNECTION")
+						self.socket_list[-1].close()
 	
 				# Un message d'un client existant
 				else: 
@@ -124,21 +135,22 @@ class Serveur():
 					# Il n'y a rien, le client est sans doute déconnecté
 						if sock in self.socket_list:
 							self.socket_list.remove(sock)
-						print("Client perdu")
+						print("SERVEUR: Client perdu")
 	
 				if len(self.socket_list) == 1: # Cas où il ne reste plus qu'un seul socket, le notre.
-					print("Fermeture, plus aucun client connecté")
+					print("SERVEUR: Fermeture, plus aucun client connecté")
 					self.s.close()
 					return 0
 
 class Client():
 	"""Class chargée du client. Prend en argument le serveur local."""
 
-	def __init__(self, pseudo):
+	def __init__(self, pseudo, serveur):
 		self.pseudo = pseudo
 	
 		self.socket_list = []
 		self.id_list=[]
+		self.pseudo_list = ["LOCAL",self.pseudo] # Ajoute notre pseudo à la liste des pseudos (précédé du nom du premier socket, le notre)
 
 		self.c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -154,18 +166,23 @@ class Client():
 		while 1:
 			# Un message d'un client existant
 			data = self.socket_list[1].recv(size) # Reception des données...
+
 			if data:
 	                	# Des données sont arrivées
 				data = pickle.loads(data) # Décodage de ces données
 
-				if data[0] not in self.id_list: # data[0] correspond à l'id du message
+				if type(data) is str:
+					self.pseudo_list.append(data) # Reception du pseudo, on l'ajoute à la liste
+					print(pseudo)
+
+				elif data[0] not in self.id_list: # data[0] correspond à l'id du message
 					self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
 					if type(data) is tuple:
 						self.ConnectNewServer(data[0]) # Reception de l'ip, on se connecte
 
 					elif data[3] == "": # Message non privé
 						print(data[2]+": "+data[1]) # Affiche le message
-						sendMessage(data, self.socket_list[1:]+self.serveur.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+						sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 					else: #Il s'agit d'un message privé
 						if data[3] == pseudo: # Qui nous est destiné
@@ -174,18 +191,19 @@ class Client():
 							sendMessage(data, self.socket_list[1:])
 
 	def ConnectNewServer(self, ip, port=port_serveur):
-
 		# Création d'un socket pour la nouvelle connection
 		ysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		try:
-			ysock.connect((ip,port))# On se connecte au nouveau serveur.
-			self.socket_list.append(ysock)
-			if ip != '':
-				print("CLIENT: Connecté au serveur distant d'ip "+str(ip))
-			else:
-				print("CLIENT: Connecté au serveur local")
+			if ip not in serveur.ip_list:
+				ysock.connect((ip,port))# On se connecte au nouveau serveur.
+				self.socket_list.append(ysock)
+				if ip != '':
+					print("CLIENT: Connecté au serveur distant d'ip "+str(ip)+". Envoi du pseudo")
+					ysock.send(pickle.dumps(self.pseudo)) # Envoi du pseudo
+				else:
+					print("CLIENT: Connecté au serveur local")
 		except Exception as e: 
-			print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port_serveur, e))
+				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port_serveur, e))
 
 Authentification = Tk()
 
@@ -198,7 +216,7 @@ pseudo="Moi"
 
 serveur = Serveur(pseudo)
 time.sleep(2)
-client = Client(pseudo)
+client = Client(pseudo, serveur)
 time.sleep(2)
 
 client.ConnectNewServer("192.168.1.43")
