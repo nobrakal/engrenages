@@ -38,7 +38,6 @@ def graphical():
 	Authentification.geometry('410x170')
 	Authentification['bg']='bisque' # couleur de fond
 	
-	
 	#Création de deux sous-fenêtres
 	Frame1 = Frame(Authentification,borderwidth=2,relief=GROOVE)	
 	Frame1.pack(padx=10,pady=10)
@@ -46,11 +45,9 @@ def graphical():
 	Frame2 = Frame(Authentification,borderwidth=2,relief=GROOVE)
 	Frame2.pack(padx=10,pady=10)
 
-
 	# Création d'un widget Label (texte 'Veuillez entrer votre Pseudo !')
 	Label1 = Label(Frame1, text = 'Veuillez entrer votre Pseudo', fg = 'black', bg='lightgrey')
 	Label1.pack(padx=5,pady=5) #positionne le widget Label1
-
 
 	#crée le champ de saisie pour entrer le pseudo
 	Pseudo= StringVar()
@@ -58,19 +55,15 @@ def graphical():
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5)
 
-
 	# Création d'un widget Label (texte 'Que souhaitez-vous faire?')
 	Label2 = Label(Frame2, text = 'Que souhaitez-vous faire?', fg = 'black', bg='lightgrey')
 	Label2.pack(pady=5)
-	
 
 	Bouton1 = Button(Frame2, text = 'Rejoindre un serveur existant', command = Authentification.destroy) #***********
 	Bouton1.pack(side=LEFT, padx = 5, pady=5)
-	
 
 	Bouton2 = Button(Frame2, text = 'Créer un nouveau serveur', command = Authentification.destroy) #************
 	Bouton2.pack(side=LEFT, padx = 5, pady=5)
-	
 
 	# Création d'un bouton quitter
 	Bouton3 = Button(Frame2, text = 'Quitter', command = Authentification.destroy)
@@ -79,9 +72,58 @@ def graphical():
 	# Lancement du gestionnaire d'événements
 	Authentification.mainloop()
 
-	return pseudo
+	fenetre_princ()
+	return Pseudo
 
+fenetre_princ():
+	Engrenages = Tk()
+	Engrenages.title('Engrenages')
+	Engrenages.geometry('700x400')
+	Engrenages['bg']='bisque' # couleur de fond
 
+	Frame1 = Frame(Engrenages,borderwidth=3,relief=GROOVE)
+	Frame1.pack(padx=10,pady=10)
+
+	Label1 = Label(Frame1, text = 'Engrenages', fg = 'black') # augmenter la taille!!
+	Label1.pack(padx=5,pady=5)
+
+	Frame2 = LabelFrame(Engrenages,borderwidth=2,relief=GROOVE, bg="lightgrey", text="Messages précédents")
+	Frame2.place(x=15,y=75)
+
+	Label3 = Label(Frame2, text = '**********', fg = 'black', bg="white") #affiche les messages précédents
+	Label3.pack(padx=5,pady=5, side=TOP)
+
+	Frame3 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
+	Frame3.place(x=550,y=75)
+
+	Label4 = Label(Frame3, text = 'Utilisateurs connectés', fg = 'black', bg="lightgrey")
+	Label4.pack(padx=5,pady=5, side=TOP)
+
+	Label5 = Label(Frame3, text = '********', fg = 'black', bg="lightgrey") #liste des utilisateurs connectés
+	Label5.pack(padx=5,pady=5)
+
+	Frame4 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
+	Frame4.pack(padx=10,pady=10, side=BOTTOM)
+
+	Label6 = Label(Frame4, text = 'Votre message:', fg = 'black', bg="lightgrey")
+	Label6.pack(padx=5,pady=5, side=LEFT)
+
+	Message= StringVar()
+	Champ = Entry(Frame4, textvariable= Message, bg ='white', fg='grey')
+	Champ.focus_set()
+	Champ.pack(padx=5, pady=5, side=LEFT)
+
+	Bouton1 = Button(Frame4, text = 'Envoyer', command = Engrenages.destroy)  #Remplacer la commande par celle d'envoi de message
+	Bouton1.pack(padx=5,pady=5, side= LEFT)
+
+	Frame5 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
+	Frame5.place(x=575,y=360)
+
+	Bouton2 = Button(Frame5, text = 'Déconnexion', command = Engrenages.destroy)
+	Bouton2.pack(padx=5,pady=5, side= LEFT)
+
+	# Lancement du gestionnaire d'événements
+	Engrenages.mainloop()
 
 class Serveur():
 	"""Class chargée du serveur."""
