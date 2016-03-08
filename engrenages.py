@@ -73,7 +73,7 @@ def graphical():
 
 	return Pseudo
 
-fenetre_princ(client):
+def fenetre_princ(client):
 	Engrenages = Tk()
 	Engrenages.title('Engrenages')
 	Engrenages.geometry('700x400')
@@ -111,7 +111,7 @@ fenetre_princ(client):
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5, side=LEFT)
 
-	Bouton1 = Button(Frame4, text = 'Envoyer', command = Engrenages.destroy)  #Remplacer la commande par celle d'envoi de message
+	Bouton1 = Button(Frame4, text = 'Envoyer', command = sendTimedMessage(Message.get(), client.socket_list,client))  #Remplacer la commande par celle d'envoi de message
 	Bouton1.pack(padx=5,pady=5, side= LEFT)
 
 	Frame5 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
