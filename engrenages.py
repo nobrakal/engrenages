@@ -14,7 +14,6 @@ import time
 from tkinter import *
 
 port_serveur = 6666
-port_client = 6667
 backlog = 10 # Nombre de connections maximum
 size = 1024 
 
