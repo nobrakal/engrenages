@@ -31,7 +31,8 @@ def sendMessage(msg, socket_list):
 	for sock in socket_list:
 		sock.send(pickle.dumps(msg)) # Envoi du message.
 
-def graphical(Authentification):
+def graphical():
+	Authentification = Tk()
 	# Création de la fenêtre principale
 	Authentification.title('Engrenages')
 	Authentification.geometry('410x170')
@@ -74,8 +75,11 @@ def graphical(Authentification):
 	# Création d'un bouton quitter
 	Bouton3 = Button(Frame2, text = 'Quitter', command = Authentification.destroy)
 	Bouton3.pack(side=LEFT, padx = 5, pady=5)
+	
+	# Lancement du gestionnaire d'événements
+	Authentification.mainloop()
 
-	return Authentification
+	return pseudo
 
 
 
@@ -205,14 +209,7 @@ class Client():
 		except Exception as e: 
 				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port_serveur, e))
 
-Authentification = Tk()
-
-Authentification = graphical(Authentification)
-
-# Lancement du gestionnaire d'événements
-Authentification.mainloop()
-
-pseudo="Moi"
+pseudo = graphical()
 
 serveur = Serveur(pseudo)
 time.sleep(2)
