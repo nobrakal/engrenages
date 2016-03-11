@@ -111,7 +111,7 @@ def fenetre_princ(client):
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5, side=LEFT)
 
-	Bouton1 = Button(Frame4, text = 'Envoyer', command = sendTimedMessage(Message.get(), client.socket_list,client))  #Remplacer la commande par celle d'envoi de message
+	Bouton1 = Button(Frame4, text = 'Envoyer', command = Engrenages.destroy)  #Remplacer la commande par celle d'envoi de message
 	Bouton1.pack(padx=5,pady=5, side= LEFT)
 
 	Frame5 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
@@ -123,7 +123,7 @@ def fenetre_princ(client):
 	# Lancement du gestionnaire d'événements
 	Engrenages.mainloop()
 
-class Serveur():
+class Serveur(threading.Thread):
 	"""Class chargée du serveur."""
 
 	def __init__(self, pseudo):
@@ -140,10 +140,9 @@ class Serveur():
 
 		self.socket_list.append(self.s)
 
-		self.thread = threading.Thread(target=self.startServeur)
-		self.thread.start()
+		threading.Thread.__init__(self)
 
-	def startServeur(self):
+	def run(self):
 		"""Code à exécuter pendant l'exécution du serveur."""
 		localsock, localaddr = self.s.accept() # Attends la connection du client local
 		self.socket_list.append(localsock)
@@ -186,9 +185,8 @@ class Serveur():
 					self.s.close()
 					return 0
 
-class Client():
+class Client(threading.Thread):
 	"""Class chargée du client. Prend en argument le serveur local."""
-
 	def __init__(self, pseudo, serveur):
 		self.pseudo = pseudo
 		
@@ -202,10 +200,9 @@ class Client():
 
 		self.socket_list.append(self.c)
 
-		self.thread = threading.Thread(target=self.startClient)
-		self.thread.start()   
+		threading.Thread.__init__(self)
 
-	def startClient(self):
+	def run(self):
 		"""Code à exécuter pendant l'exécution du client."""
 		#On se connecte au serveur local
 		self.ConnectNewServer('')
@@ -254,8 +251,10 @@ class Client():
 pseudo = graphical()
 
 serveur = Serveur(pseudo)
+serveur.start()
 time.sleep(2)
 client = Client(pseudo, serveur)
+client.start()
 time.sleep(2)
 
 fenetre_princ(client) #Fenêtre principale
