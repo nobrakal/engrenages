@@ -17,9 +17,11 @@ port_serveur = 6666
 backlog = 10 # Nombre de connections maximum
 size = 1024 
 
-def sendTimedMessage(msg, socket_list,client, destinataire=""):
+def sendTimedMessage(msg, socket_list="DEFAULT",other_client="", destinataire="CC"):
 	"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste. Si destinataire est défini, le message ne sera lu que par la personne
 	portant le pseudo mis dans destinataire"""
+	if socket_list=="DEFAULT":
+		socket_list=client.socket_list[1:]
 	time = str(datetime.datetime.now())
 	client.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
 	for sock in socket_list:
@@ -29,6 +31,14 @@ def sendMessage(msg, socket_list):
 	"""Envoi un message à la liste de socket"""
 	for sock in socket_list:
 		sock.send(pickle.dumps(msg)) # Envoi du message.
+
+def shutdown():
+	for sock in client.socket_list:
+		client.socket_list.remove(sock)
+		sock.close()
+	for sock in serveur.socket_list:
+		serveur.socket_list.remove(sock)
+		sock.close()
 
 def graphical():
 	Authentification = Tk()
@@ -71,11 +81,11 @@ def graphical():
 	# Lancement du gestionnaire d'événements
 	Authentification.mainloop()
 
-	return Pseudo
+	return Pseudo.get()
 
-def fenetre_princ(client):
+def fenetre_princ(pseudo):
 	Engrenages = Tk()
-	Engrenages.title('Engrenages')
+	Engrenages.title('Engrenages:'+ pseudo)
 	Engrenages.geometry('700x400')
 	Engrenages['bg']='bisque' # couleur de fond
 
@@ -111,13 +121,13 @@ def fenetre_princ(client):
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5, side=LEFT)
 
-	Bouton1 = Button(Frame4, text = 'Envoyer', command = Engrenages.destroy)  #Remplacer la commande par celle d'envoi de message
+	Bouton1 = Button(Frame4, text = 'Envoyer', command = lambda: sendTimedMessage("CC"))  #Remplacer la commande par celle d'envoi de message
 	Bouton1.pack(padx=5,pady=5, side= LEFT)
 
 	Frame5 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
 	Frame5.place(x=575,y=360)
 
-	Bouton2 = Button(Frame5, text = 'Déconnexion', command = Engrenages.destroy)
+	Bouton2 = Button(Frame5, text = 'Déconnexion', command = shutdown)
 	Bouton2.pack(padx=5,pady=5, side= LEFT)
 
 	# Lancement du gestionnaire d'événements
@@ -180,10 +190,10 @@ class Serveur(threading.Thread):
 							self.socket_list.remove(sock)
 						print("SERVEUR: Client perdu")
 	
-				if len(self.socket_list) == 1: # Cas où il ne reste plus qu'un seul socket, le notre.
-					print("SERVEUR: Fermeture, plus aucun client connecté")
-					self.s.close()
-					return 0
+			if len(self.socket_list) < 1: # Cas où il ne reste plus qu'un seul socket, le notre.
+				print("SERVEUR: Fermeture, plus aucun client connecté")
+				self.s.close()
+				return 0
 
 class Client(threading.Thread):
 	"""Class chargée du client. Prend en argument le serveur local."""
@@ -232,6 +242,10 @@ class Client(threading.Thread):
 							self.msg = data[2]+" vous chuchote: "+data[1] # Affiche le message
 						else: # Pas pour nous, on le fait tourner
 							sendMessage(data, self.socket_list[1:])
+			if len(self.socket_list) < 1: # Cas où il ne reste plus qu'un seul socket, le notre.
+				print("SERVEUR: Fermeture, plus aucun client connecté")
+				self.s.close()
+				return 0
 
 	def ConnectNewServer(self, ip, port=port_serveur):
 		# Création d'un socket pour la nouvelle connection
@@ -257,11 +271,6 @@ client = Client(pseudo, serveur)
 client.start()
 time.sleep(2)
 
-fenetre_princ(client) #Fenêtre principale
+client.ConnectNewServer("", 6667) #Connecte sur une autre instance s'executant sur le port 6667 du même ordianateur.
 
-client.ConnectNewServer("192.168.1.43")
-msg = input("Entrez votre message : ")
-sendTimedMessage(msg,client.socket_list[1:],client) # Message public
-
-msg = input("Entrez votre message : ")
-sendTimedMessage(msg,client.socket_list[1:],client, "Moi") # Message privé
+fenetre_princ(pseudo) #Fenêtre principale
