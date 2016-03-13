@@ -17,7 +17,7 @@ port_serveur = 6666
 backlog = 10 # Nombre de connections maximum
 size = 1024 
 
-def sendTimedMessage(msg, socket_list="DEFAULT",other_client="", destinataire="CC"):
+def sendTimedMessage(msg, socket_list="DEFAULT",other_client="", destinataire=""):
 	"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste. Si destinataire est défini, le message ne sera lu que par la personne
 	portant le pseudo mis dans destinataire"""
 	if socket_list=="DEFAULT":
@@ -98,6 +98,7 @@ def fenetre_princ(pseudo):
 	Frame2 = LabelFrame(Engrenages,borderwidth=2,relief=GROOVE, bg="lightgrey", text="Messages précédents")
 	Frame2.place(x=15,y=75)
 
+	Client_MSG = StringVar()
 	Label3 = Label(Frame2, textvariable = client.msg, fg = 'black', bg="white") #affiche les messages précédents
 	Label3.pack(padx=5,pady=5, side=TOP)
 
@@ -121,7 +122,7 @@ def fenetre_princ(pseudo):
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5, side=LEFT)
 
-	Bouton1 = Button(Frame4, text = 'Envoyer', command = lambda: sendTimedMessage("CC"))  #Remplacer la commande par celle d'envoi de message
+	Bouton1 = Button(Frame4, text = 'Envoyer', command = lambda: sendTimedMessage(Message.get()))  #Remplacer la commande par celle d'envoi de message
 	Bouton1.pack(padx=5,pady=5, side= LEFT)
 
 	Frame5 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
@@ -188,6 +189,7 @@ class Serveur(threading.Thread):
 					# Il n'y a rien, le client est sans doute déconnecté
 						if sock in self.socket_list:
 							self.socket_list.remove(sock)
+							sock.close()
 						print("SERVEUR: Client perdu")
 	
 			if len(self.socket_list) < 1: # Cas où il ne reste plus qu'un seul socket, le notre.
@@ -234,12 +236,14 @@ class Client(threading.Thread):
 						self.ConnectNewServer(data[0]) # Reception de l'ip, on se connecte
 
 					elif data[3] == "": # Message non privé
-						self.msg = data[2]+": "+data[1] # Affiche le message
+						self.msg = data[2]+": "+data[1] 
+						print(self.msg) # Affiche le message
 						sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 					else: #Il s'agit d'un message privé
 						if data[3] == pseudo: # Qui nous est destiné
-							self.msg = data[2]+" vous chuchote: "+data[1] # Affiche le message
+							self.msg = data[2]+" vous chuchote: "+data[1]
+							print(self.msg) # Affiche le message
 						else: # Pas pour nous, on le fait tourner
 							sendMessage(data, self.socket_list[1:])
 			if len(self.socket_list) < 1: # Cas où il ne reste plus qu'un seul socket, le notre.
