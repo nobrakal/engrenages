@@ -1,9 +1,5 @@
 #!/usr/bin/python3
 
-""" 
-A simple echo server 
-""" 
-
 import socket 
 import select
 import threading
@@ -40,17 +36,24 @@ def shutdown():
 		serveur.socket_list.remove(sock)
 		sock.close()
 
-def graphical():
+def choix_ip_et_destroy(client, Authentification):
+	"""
+	Fonction écran permettant d'éxécuter deux sous fonctions pour un seul boutton.
+	"""
+	Authentification.destroy()
+	choisir_ip(client)
+
+def graphical(client):
 	"""
 	Fenêtre d'identification qui permet à l'utilisateur de choisir son pseudo et de créer ou rejoindre un serveur
 	"""
 	Authentification = Tk()
-    # Création de la fenêtre principale
+	# Création de la fenêtre principale
 	Authentification.title('Engrenages')
 	Authentification.geometry('410x170')
 	Authentification['bg']='bisque' # couleur de fond
 	
-    #Création de deux sous-fenêtres
+	#Création de deux sous-fenêtres
 	Frame1 = Frame(Authentification,borderwidth=2,relief=GROOVE)	
 	Frame1.pack(padx=10,pady=10)
 
@@ -71,7 +74,7 @@ def graphical():
 	Label2 = Label(Frame2, text = 'Que souhaitez-vous faire?', fg = 'black', bg='lightgrey')
 	Label2.pack(pady=5)
 
-	Bouton1 = Button(Frame2, text = 'Rejoindre un serveur existant', command = lambda: choisir_ip(client))
+	Bouton1 = Button(Frame2, text = 'Rejoindre un serveur existant', command = lambda: choix_ip_et_destroy(client, Authentification)) #***********
 	Bouton1.pack(side=LEFT, padx = 5, pady=5)
 
 	Bouton2 = Button(Frame2, text = 'Créer un nouveau serveur', command = Authentification.destroy) #************
@@ -86,32 +89,35 @@ def graphical():
 
 	return Pseudo.get()
 
+def connect_and_destroy(client,ip,fenetre):
+	"""
+	Fonction écran permettant d'éxécuter deux sous fonctions pour un seul boutton.
+	"""
+	client.ConnectNewServer(ip)
+	fenetre.destroy()
 
 def choisir_ip(client):
-    Choix_IP=Tk()
-    Choix_IP.title('Engrenages')
-    Choix_IP.geometry('300x150')
-    Choix_IP['bg']='bisque'
-    
-    
-    Frame1 = Frame(Choix_IP,borderwidth=3,relief=GROOVE)
-    Frame1.pack(padx=10,pady=10)
- 
-    Label1 = Label(Frame1, text = "Quelle est l'adresse IP du serveur à rejoindre?", fg = 'black')
-    Label1.pack(padx=5,pady=5)
-    
-    IP= StringVar()
-    Champ = Entry(Frame1, textvariable= IP, bg ='white', fg='grey')
-    Champ.focus_set()
-    Champ.pack(padx=5, pady=5)
+	Choix_IP=Tk()
+	Choix_IP.title('Engrenages')
+	Choix_IP.geometry('300x150')
+	Choix_IP['bg']='bisque'
 
-    Bouton1 = Button(Frame1, text = 'Valider', command = Choix_IP.destroy) #***********
-    Bouton1.pack(padx = 5, pady=5)
-    
-    Choix_IP.mainloop
-    client.ConnectNewServer(IP.get())
-    
-    
+	Frame1 = Frame(Choix_IP,borderwidth=3,relief=GROOVE)
+	Frame1.pack(padx=10,pady=10)
+	
+	Label1 = Label(Frame1, text = "Quelle est l'adresse IP du serveur à rejoindre?", fg = 'black')
+	Label1.pack(padx=5,pady=5)
+
+	IP= StringVar()
+	Champ = Entry(Frame1, textvariable= IP, bg ='white', fg='grey')
+	Champ.focus_set()
+	Champ.pack(padx=5, pady=5)
+
+	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: connect_and_destroy(client,IP.get(),Choix_IP)) #***********
+	Bouton1.pack(padx = 5, pady=5)
+
+	Choix_IP.mainloop()
+
 def fenetre_princ(pseudo):
 	Engrenages = Tk()
 	Engrenages.title('Engrenages:'+ pseudo)
@@ -163,15 +169,10 @@ def fenetre_princ(pseudo):
 	# Lancement du gestionnaire d'événements
 	Engrenages.mainloop()
 
-
-
-
-
-
 class Serveur(threading.Thread):
 	"""Class chargée du serveur."""
 
-	def __init__(self, pseudo):
+	def __init__(self, pseudo=""):
 		self.socket_list = []
 		
 		self.pseudo = pseudo
@@ -222,6 +223,7 @@ class Serveur(threading.Thread):
 					else:
 					# Il n'y a rien, le client est sans doute déconnecté
 						if sock in self.socket_list:
+							self.ip_list.remove(sock.getpeername())
 							self.socket_list.remove(sock)
 							sock.close()
 						print("SERVEUR: Client perdu")
@@ -233,7 +235,7 @@ class Serveur(threading.Thread):
 
 class Client(threading.Thread):
 	"""Class chargée du client. Prend en argument le serveur local."""
-	def __init__(self, pseudo, serveur):
+	def __init__(self, serveur, pseudo="", ):
 		self.pseudo = pseudo
 		
 		self.msg = ""
@@ -300,14 +302,16 @@ class Client(threading.Thread):
 		except Exception as e: 
 				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port_serveur, e))
 
-pseudo = graphical()
-
-serveur = Serveur(pseudo)
+serveur = Serveur()
 serveur.start()
-time.sleep(2)
-client = Client(pseudo, serveur)
+time.sleep(1)
+client = Client(serveur)
 client.start()
-time.sleep(2)
+time.sleep(1)
+
+pseudo = graphical(client)
+serveur.pseudo=pseudo
+client.pseudo = pseudo
 
 client.ConnectNewServer("", 6667) #Connecte sur une autre instance s'executant sur le port 6667 du même ordianateur.
 
