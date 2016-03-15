@@ -41,13 +41,16 @@ def shutdown():
 		sock.close()
 
 def graphical():
+	"""
+	Fenêtre d'identification qui permet à l'utilisateur de choisir son pseudo et de créer ou rejoindre un serveur
+	"""
 	Authentification = Tk()
-	# Création de la fenêtre principale
+    # Création de la fenêtre principale
 	Authentification.title('Engrenages')
 	Authentification.geometry('410x170')
 	Authentification['bg']='bisque' # couleur de fond
 	
-	#Création de deux sous-fenêtres
+    #Création de deux sous-fenêtres
 	Frame1 = Frame(Authentification,borderwidth=2,relief=GROOVE)	
 	Frame1.pack(padx=10,pady=10)
 
@@ -68,7 +71,7 @@ def graphical():
 	Label2 = Label(Frame2, text = 'Que souhaitez-vous faire?', fg = 'black', bg='lightgrey')
 	Label2.pack(pady=5)
 
-	Bouton1 = Button(Frame2, text = 'Rejoindre un serveur existant', command = Authentification.destroy) #***********
+	Bouton1 = Button(Frame2, text = 'Rejoindre un serveur existant', command = lambda: choisir_ip(client))
 	Bouton1.pack(side=LEFT, padx = 5, pady=5)
 
 	Bouton2 = Button(Frame2, text = 'Créer un nouveau serveur', command = Authentification.destroy) #************
@@ -83,6 +86,32 @@ def graphical():
 
 	return Pseudo.get()
 
+
+def choisir_ip(client):
+    Choix_IP=Tk()
+    Choix_IP.title('Engrenages')
+    Choix_IP.geometry('300x150')
+    Choix_IP['bg']='bisque'
+    
+    
+    Frame1 = Frame(Choix_IP,borderwidth=3,relief=GROOVE)
+    Frame1.pack(padx=10,pady=10)
+ 
+    Label1 = Label(Frame1, text = "Quelle est l'adresse IP du serveur à rejoindre?", fg = 'black')
+    Label1.pack(padx=5,pady=5)
+    
+    IP= StringVar()
+    Champ = Entry(Frame1, textvariable= IP, bg ='white', fg='grey')
+    Champ.focus_set()
+    Champ.pack(padx=5, pady=5)
+
+    Bouton1 = Button(Frame1, text = 'Valider', command = Choix_IP.destroy) #***********
+    Bouton1.pack(padx = 5, pady=5)
+    
+    Choix_IP.mainloop
+    client.ConnectNewServer(IP.get())
+    
+    
 def fenetre_princ(pseudo):
 	Engrenages = Tk()
 	Engrenages.title('Engrenages:'+ pseudo)
@@ -133,6 +162,11 @@ def fenetre_princ(pseudo):
 
 	# Lancement du gestionnaire d'événements
 	Engrenages.mainloop()
+
+
+
+
+
 
 class Serveur(threading.Thread):
 	"""Class chargée du serveur."""
