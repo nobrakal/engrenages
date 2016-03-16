@@ -20,6 +20,8 @@ def sendTimedMessage(msg, socket_list="DEFAULT",other_client="", destinataire=""
 		socket_list=client.socket_list[1:]
 	time = str(datetime.datetime.now())
 	client.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
+	messages_prec=self.msg.get()
+	client.msg.set(messages_prec+data[2]+": "+data[1]+"\n") # Affiche le message
 	for sock in socket_list:
 		sock.send(pickle.dumps([time,msg,client.pseudo,destinataire])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
 
@@ -43,7 +45,7 @@ def choix_ip_et_destroy(client, Authentification):
 	Authentification.destroy()
 	choisir_ip(client)
 
-def graphical(client):
+def identification(client):
 	"""
 	Fenêtre d'identification qui permet à l'utilisateur de choisir son pseudo et de créer ou rejoindre un serveur
 	"""
@@ -118,7 +120,7 @@ def choisir_ip(client):
 
 	Choix_IP.mainloop()
 
-def fenetre_princ(pseudo):
+def fenetre_princ(pseudo, client):
 	Engrenages = Tk()
 	Engrenages.title('Engrenages:'+ pseudo)
 	Engrenages.geometry('700x400')
@@ -133,7 +135,7 @@ def fenetre_princ(pseudo):
 	Frame2 = LabelFrame(Engrenages,borderwidth=2,relief=GROOVE, bg="lightgrey", text="Messages précédents")
 	Frame2.place(x=15,y=75)
 
-	Client_MSG = StringVar()
+	client.msg = StringVar()
 	Label3 = Label(Frame2, textvariable = client.msg, fg = 'black', bg="white") #affiche les messages précédents
 	Label3.pack(padx=5,pady=5, side=TOP)
 
@@ -238,7 +240,7 @@ class Client(threading.Thread):
 	def __init__(self, serveur, pseudo="", ):
 		self.pseudo = pseudo
 		
-		self.msg = ""
+		self.msg = None # Le type sera changé par fentere_princ()
 	
 		self.socket_list = []
 		self.id_list=[]
@@ -272,7 +274,9 @@ class Client(threading.Thread):
 						self.ConnectNewServer(data[0]) # Reception de l'ip, on se connecte
 
 					elif data[3] == "": # Message non privé
-						self.msg = data[2]+": "+data[1] 
+						if isinstance(self.msg,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
+							messages_prec=self.msg.get()
+							self.msg.set(messages_prec+data[2]+": "+data[1]+"\n") # Affiche le message
 						print(self.msg) # Affiche le message
 						sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
@@ -309,10 +313,10 @@ client = Client(serveur)
 client.start()
 time.sleep(1)
 
-pseudo = graphical(client)
+pseudo = identification(client)
 serveur.pseudo=pseudo
 client.pseudo = pseudo
 
 client.ConnectNewServer("", 6667) #Connecte sur une autre instance s'executant sur le port 6667 du même ordianateur.
 
-fenetre_princ(pseudo) #Fenêtre principale
+fenetre_princ(pseudo, client) #Fenêtre principale
