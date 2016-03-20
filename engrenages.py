@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import socket 
+import socket
 import select
 import threading
 import datetime
@@ -11,17 +11,18 @@ from tkinter import *
 
 port_serveur = 6666
 backlog = 10 # Nombre de connections maximum
-size = 1024 
+size = 1024
 
-def sendTimedMessage(msg, socket_list="DEFAULT",other_client="", destinataire=""):
+def sendTimedMessage(msg, destinataire="",socket_list="DEFAULT"):
 	"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste. Si destinataire est défini, le message ne sera lu que par la personne
 	portant le pseudo mis dans destinataire"""
 	if socket_list=="DEFAULT":
 		socket_list=client.socket_list[1:]
 	time = str(datetime.datetime.now())
 	client.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
-	messages_prec=self.msg.get()
-	client.msg.set(messages_prec+data[2]+": "+data[1]+"\n") # Affiche le message
+	if destinataire == "": # N'affiche pas messages privés
+		messages_prec=client.msg.get()
+		client.msg.set(messages_prec+data[2]+": "+data[1]+"\n") # Affiche le message
 	for sock in socket_list:
 		sock.send(pickle.dumps([time,msg,client.pseudo,destinataire])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
 
@@ -37,6 +38,13 @@ def shutdown():
 	for sock in serveur.socket_list:
 		serveur.socket_list.remove(sock)
 		sock.close()
+
+def diff_pseudo(liste1, liste2):
+	"""
+	Compare et fusionne deux listes de pseudos
+	"""
+	print("TODO")
+	return liste1.extend(liste2)
 
 def choix_ip_et_destroy(client, Authentification):
 	"""
@@ -54,9 +62,9 @@ def identification(client):
 	Authentification.title('Engrenages')
 	Authentification.geometry('410x170')
 	Authentification['bg']='bisque' # couleur de fond
-	
+
 	#Création de deux sous-fenêtres
-	Frame1 = Frame(Authentification,borderwidth=2,relief=GROOVE)	
+	Frame1 = Frame(Authentification,borderwidth=2,relief=GROOVE)
 	Frame1.pack(padx=10,pady=10)
 
 	Frame2 = Frame(Authentification,borderwidth=2,relief=GROOVE)
@@ -85,7 +93,7 @@ def identification(client):
 	# Création d'un bouton quitter
 	Bouton3 = Button(Frame2, text = 'Quitter', command = Authentification.destroy)
 	Bouton3.pack(side=LEFT, padx = 5, pady=5)
-	
+
 	# Lancement du gestionnaire d'événements
 	Authentification.mainloop()
 
@@ -106,7 +114,7 @@ def choisir_ip(client):
 
 	Frame1 = Frame(Choix_IP,borderwidth=3,relief=GROOVE)
 	Frame1.pack(padx=10,pady=10)
-	
+
 	Label1 = Label(Frame1, text = "Quelle est l'adresse IP du serveur à rejoindre?", fg = 'black')
 	Label1.pack(padx=5,pady=5)
 
@@ -145,8 +153,9 @@ def fenetre_princ(pseudo, client):
 	Label4 = Label(Frame3, text = 'Utilisateurs connectés', fg = 'black', bg="lightgrey")
 	Label4.pack(padx=5,pady=5, side=TOP)
 
-	#Label5 = Label(Frame3, textvariable = liste_pseudo, fg = 'black', bg="lightgrey") #liste des utilisateurs connectés
-	#Label5.pack(padx=5,pady=5)
+	client.StringVar_pseudo_list = StringVar()
+	Label5 = Label(Frame3, textvariable = client.StringVar_pseudo_list, fg = 'black', bg="lightgrey") #liste des utilisateurs connectés
+	Label5.pack(padx=5,pady=5)
 
 	Frame4 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
 	Frame4.pack(padx=10,pady=10, side=BOTTOM)
@@ -154,7 +163,7 @@ def fenetre_princ(pseudo, client):
 	Label6 = Label(Frame4, text = 'Votre message:', fg = 'black', bg="lightgrey")
 	Label6.pack(padx=5,pady=5, side=LEFT)
 
-	Message= StringVar()
+	Message = StringVar()
 	Champ = Entry(Frame4, textvariable= Message, bg ='white', fg='grey')
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5, side=LEFT)
@@ -176,15 +185,15 @@ class Serveur(threading.Thread):
 
 	def __init__(self, pseudo=""):
 		self.socket_list = []
-		
+
 		self.pseudo = pseudo
 
 		self.ip_list = []
 
 		self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		self.s.bind(('',port_serveur)) 
-		self.s.listen(backlog) 
+		self.s.bind(('',port_serveur))
+		self.s.listen(backlog)
 
 		self.socket_list.append(self.s)
 
@@ -200,23 +209,16 @@ class Serveur(threading.Thread):
 			ready_to_read, ready_to_write, in_error = select.select(self.socket_list,[],[])
 			for sock in ready_to_read:
 				# Une nouvelle connection!
-				if sock == self.s: 
+				if sock == self.s:
 					newsocket, addr = self.s.accept()
 					self.socket_list.append(newsocket)
 					if addr[0] not in self.ip_list:
 						self.ip_list.append(addr[0])
 						self.socket_list[1].send(pickle.dumps(addr)) # Envoi de l'ip à notre client local pour qu'il puisse se connecter
-
-					#data = self.socket_list[-1].recv(size) # Attends l'envoi du pseudo du dernier socket ajouté à la liste
-					#if data:
-					#	self.socket_list[1].send(data) # Envoi le pseudo à notre client
 						print ("SERVEUR: Client connecté, d'adresse: "+str(addr[0]))
-					#else:
-					#	print ("SERVEUR: Client connecté, d'adresse: "+str(addr[0])+"mais pseudo non reçu. SUPRESSION DE LA CONNECTION")
-					#	self.socket_list[-1].close()
-	
+
 				# Un message d'un client existant
-				else: 
+				else:
 					# Reception des données...
 					data = sock.recv(size)
 					if data:
@@ -229,7 +231,7 @@ class Serveur(threading.Thread):
 							self.socket_list.remove(sock)
 							sock.close()
 						print("SERVEUR: Client perdu")
-	
+
 			if len(self.socket_list) < 1: # Cas où il ne reste plus qu'un seul socket, le notre.
 				print("SERVEUR: Fermeture, plus aucun client connecté")
 				self.s.close()
@@ -239,12 +241,13 @@ class Client(threading.Thread):
 	"""Class chargée du client. Prend en argument le serveur local."""
 	def __init__(self, serveur, pseudo="", ):
 		self.pseudo = pseudo
-		
+
 		self.msg = None # Le type sera changé par fentere_princ()
-	
+		self.StringVar_pseudo_list = None
+
 		self.socket_list = []
 		self.id_list=[]
-		#self.pseudo_list = ["LOCAL",self.pseudo] # Ajoute notre pseudo à la liste des pseudos (précédé du nom du premier socket, le notre)
+		self.pseudo_list = [] # Ajoute notre pseudo à la liste des pseudos (précédé du nom du premier socket, le notre)
 
 		self.c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -264,10 +267,6 @@ class Client(threading.Thread):
 	                	# Des données sont arrivées
 				data = pickle.loads(data) # Décodage de ces données
 
-				#if type(data) is str:
-				#	self.pseudo_list.append(data) # Reception du pseudo, on l'ajoute à la liste
-				#	print(pseudo)
-
 				if data[0] not in self.id_list: # data[0] correspond à l'id du message
 					self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
 					if type(data) is tuple:
@@ -277,15 +276,29 @@ class Client(threading.Thread):
 						if isinstance(self.msg,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
 							messages_prec=self.msg.get()
 							self.msg.set(messages_prec+data[2]+": "+data[1]+"\n") # Affiche le message
-						print(self.msg) # Affiche le message
+						else:
+							print(data[2]+": "+data[1]+"\n")
 						sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 					else: #Il s'agit d'un message privé
 						if data[3] == pseudo: # Qui nous est destiné
-							self.msg = data[2]+" vous chuchote: "+data[1]
-							print(self.msg) # Affiche le message
-						else: # Pas pour nous, on le fait tourner
-							sendMessage(data, self.socket_list[1:])
+							if isinstance(self.msg,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
+								messages_prec=self.msg.get()
+								self.msg.set(messages_prec+data[2]+" vous chuchotte: "+data[1]+"\n") # Affiche le message
+							else:
+								print(data[2]+" vous chuchote: "+data[1]+"\n")
+
+						elif data[3] == "SYSTEM": # Message système, reception d'un pseudo, ou d'une liste de pseudo)
+							self.pseudo_list = diff_pseudo(data[1],self.pseudo_list)
+							print("SYSTEM")
+							if isinstance(self.StringVar_pseudo_list,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
+								j = ""
+								for i in self.pseudo_list:
+									j += i+"\n"
+								self.StringVar_pseudo_list.set(j) # Affiche le message
+
+						sendMessage(data, self.socket_list[1:])
+
 			if len(self.socket_list) < 1: # Cas où il ne reste plus qu'un seul socket, le notre.
 				print("SERVEUR: Fermeture, plus aucun client connecté")
 				self.s.close()
@@ -298,12 +311,12 @@ class Client(threading.Thread):
 			if ip not in serveur.ip_list:
 				ysock.connect((ip,port))# On se connecte au nouveau serveur.
 				self.socket_list.append(ysock)
-				if ip != '':
+				if len(self.socket_list) > 2:
 					print("CLIENT: Connecté au serveur distant d'ip "+str(ip)+".")
-					#ysock.send(pickle.dumps(self.pseudo)) # Envoi du pseudo
 				else:
 					print("CLIENT: Connecté au serveur local")
-		except Exception as e: 
+				sendTimedMessage(self.pseudo_list,"SYSTEM") # Envoi son pseudo à l'adresse du système
+		except Exception as e:
 				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port_serveur, e))
 
 serveur = Serveur()
@@ -314,9 +327,10 @@ client.start()
 time.sleep(1)
 
 pseudo = identification(client)
-serveur.pseudo=pseudo
+serveur.pseudo = pseudo
 client.pseudo = pseudo
+client.pseudo_list.append(pseudo)
 
-client.ConnectNewServer("", 6667) #Connecte sur une autre instance s'executant sur le port 6667 du même ordianateur.
+#client.ConnectNewServer("", 6667) #Connecte sur une autre instance s'executant sur le port 6667 du même ordinateur.
 
 fenetre_princ(pseudo, client) #Fenêtre principale
