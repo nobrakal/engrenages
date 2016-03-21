@@ -6,6 +6,7 @@ import threading
 import datetime
 import pickle
 import time
+import argparse
 
 from tkinter import *
 
@@ -319,6 +320,10 @@ class Client(threading.Thread):
 		except Exception as e:
 				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port_serveur, e))
 
+parser = argparse.ArgumentParser() # Prend en compte les arguments
+parser.add_argument("--serveur", help="Lance engrengages en mode serveur. Prends le pseudo en argument")
+args = parser.parse_args()
+
 serveur = Serveur()
 serveur.start()
 time.sleep(1)
@@ -326,11 +331,17 @@ client = Client(serveur)
 client.start()
 time.sleep(1)
 
-pseudo = identification(client)
+if args.serveur == None:
+	pseudo = identification(client)
+else:
+	pseudo = args.serveur
+
 serveur.pseudo = pseudo
 client.pseudo = pseudo
 client.pseudo_list.append(pseudo)
 
 #client.ConnectNewServer("", 6667) #Connecte sur une autre instance s'executant sur le port 6667 du même ordinateur.
-
-fenetre_princ(pseudo, client) #Fenêtre principale
+if args.serveur == None:
+	fenetre_princ(pseudo, client) #Fenêtre principale
+else:
+	print("Entrée en mode serveur. Attends des connections.")
