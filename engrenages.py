@@ -23,7 +23,7 @@ def sendTimedMessage(msg, destinataire="",socket_list="DEFAULT"):
 	client.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
 	if destinataire == "": # N'affiche pas messages privés
 		messages_prec=client.msg.get()
-		client.msg.set(messages_prec+data[2]+": "+data[1]+"\n") # Affiche le message
+		client.msg.set(messages_prec+client.pseudo+": "+msg+"\n") # Affiche le message
 	for sock in socket_list:
 		sock.send(pickle.dumps([time,msg,client.pseudo,destinataire])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
 
@@ -33,6 +33,7 @@ def sendMessage(msg, socket_list):
 		sock.send(pickle.dumps(msg)) # Envoi du message.
 
 def shutdown():
+	sendTimedMessage("DISCONNECT","SYSTEM") # Envoi le message de déconnection
 	for sock in client.socket_list:
 		client.socket_list.remove(sock)
 		sock.close()
@@ -45,7 +46,11 @@ def diff_pseudo(liste1, liste2):
 	Compare et fusionne deux listes de pseudos
 	"""
 	print("TODO")
-	return liste1.extend(liste2)
+	if liste1 != liste2:
+		isNew=True
+	else:
+		isNew=False
+	return (isNew ,liste1 + liste2)
 
 def choix_ip_et_destroy(client, Authentification):
 	"""
@@ -213,7 +218,7 @@ class Serveur(threading.Thread):
 				if sock == self.s:
 					newsocket, addr = self.s.accept()
 					self.socket_list.append(newsocket)
-					if addr[0] not in self.ip_list:
+					if addr[0] not in self.ip_list: #Exception pour le local
 						self.ip_list.append(addr[0])
 						self.socket_list[1].send(pickle.dumps(addr)) # Envoi de l'ip à notre client local pour qu'il puisse se connecter
 						print ("SERVEUR: Client connecté, d'adresse: "+str(addr[0]))
@@ -268,12 +273,13 @@ class Client(threading.Thread):
 	                	# Des données sont arrivées
 				data = pickle.loads(data) # Décodage de ces données
 
-				if data[0] not in self.id_list: # data[0] correspond à l'id du message
-					self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
-					if type(data) is tuple:
-						self.ConnectNewServer(data[0]) # Reception de l'ip, on se connecte
+				if type(data) is tuple:
+					self.ConnectNewServer(data[0]) # Reception de l'ip, on se connecte
 
-					elif data[3] == "": # Message non privé
+				elif data[0] not in self.id_list: # data[0] correspond à l'id du message
+					self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
+
+					if data[3] == "": # Message non privé
 						if isinstance(self.msg,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
 							messages_prec=self.msg.get()
 							self.msg.set(messages_prec+data[2]+": "+data[1]+"\n") # Affiche le message
@@ -289,14 +295,21 @@ class Client(threading.Thread):
 							else:
 								print(data[2]+" vous chuchote: "+data[1]+"\n")
 
-						elif data[3] == "SYSTEM": # Message système, reception d'un pseudo, ou d'une liste de pseudo)
-							self.pseudo_list = diff_pseudo(data[1],self.pseudo_list)
-							print("SYSTEM")
-							if isinstance(self.StringVar_pseudo_list,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
-								j = ""
-								for i in self.pseudo_list:
-									j += i+"\n"
-								self.StringVar_pseudo_list.set(j) # Affiche le message
+						elif data[3] == "SYSTEM": # Message système, reception d'un pseudo, ou d'une liste de pseudo
+							if data[1] == "DISCONNECT":
+								self.pseudo_list.remove(data[2])
+								messages_prec=self.msg.get()
+								self.msg.set(messages_prec+data[2]+" est déconnecté"+"\n") # Affiche le message de connection
+								self.update_StringVar_pseudo_list()
+							else:
+								if isinstance(self.msg,StringVar) and data[2] not in self.pseudo_list: # Un nouveau connecté ?
+									messages_prec=self.msg.get()
+									self.msg.set(messages_prec+data[2]+" est maintenant connecté"+"\n") # Affiche le message de connection
+
+								isNew, self.pseudo_list = diff_pseudo(data[1],self.pseudo_list)
+								if isNew:
+									sendTimedMessage(self.pseudo_list,"SYSTEM")
+									self.update_StringVar_pseudo_list()
 
 						sendMessage(data, self.socket_list[1:])
 
@@ -306,6 +319,9 @@ class Client(threading.Thread):
 				return 0
 
 	def ConnectNewServer(self, ip, port=port_serveur):
+		"""
+		Permet de se connecter à un nouveau serveur.
+		"""
 		# Création d'un socket pour la nouvelle connection
 		ysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		try:
@@ -319,6 +335,16 @@ class Client(threading.Thread):
 				sendTimedMessage(self.pseudo_list,"SYSTEM") # Envoi son pseudo à l'adresse du système
 		except Exception as e:
 				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port_serveur, e))
+
+	def update_StringVar_pseudo_list(self):
+		"""
+		Met à jour graphiquement la liste de pseudo
+		"""
+		if isinstance(self.StringVar_pseudo_list,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
+			j = ""
+			for i in self.pseudo_list:
+				j += i+"\n"
+			self.StringVar_pseudo_list.set(j) # Affiche la liste de pseudos	
 
 parser = argparse.ArgumentParser() # Prend en compte les arguments
 parser.add_argument("--serveur", help="Lance engrengages en mode serveur. Prends le pseudo en argument")
