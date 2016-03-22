@@ -227,6 +227,13 @@ def fenetre_princ(pseudo, client):
 
 	Bouton2 = Button(Frame5, text = 'Déconnexion', command = shutdown)
 	Bouton2.pack(padx=5,pady=5, side= LEFT)
+	
+	
+	Frame6 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
+	Frame6.place(x=50,y=360)
+	
+	Bouton3 = Button(Frame6, text = 'Message Privé', command = MP )
+	Bouton3.pack(padx=5,pady=5)
 
 	# Lancement du gestionnaire d'événements
 	Engrenages.mainloop()
