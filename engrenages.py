@@ -19,7 +19,6 @@ def sendTimedMessage(msg, destinataire="",socket_list="DEFAULT"):
 	portant le pseudo mis dans destinataire"""
 	if socket_list=="DEFAULT":
 		socket_list=serveur.socket_list[1:]
-	print(str(len(socket_list)))
 	time = str(datetime.datetime.now())
 	client.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
 	if destinataire != "SYSTEM": # N'affiche pas messages privés
@@ -33,11 +32,9 @@ def sendMessage(msg, socket_list):
 	for sock in socket_list:
 		sock.send(pickle.dumps(msg)) # Envoi du message.
 
-def shutdown():
-	sendTimedMessage("DISCONNECT","SYSTEM") # Envoi le message de déconnection
-#	for sock in client.socket_list:
-#		client.socket_list.remove(sock)
-#		sock.close()
+def shutdown(forced=False):
+	if forced == False:
+		sendTimedMessage("DISCONNECT","SYSTEM") # Envoi le message de déconnection
 	for sock in serveur.socket_list:
 		serveur.socket_list.remove(sock)
 		sock.close()
@@ -46,11 +43,10 @@ def diff_pseudo(liste1, liste2):
 	"""
 	Compare et fusionne deux listes de pseudos
 	"""
-	print("TODO")
-	if liste1 != liste2:
-		isNew=True
-	else:
+	if set(liste1) == set(liste2):
 		isNew=False
+	else:
+		isNew=True
 	nouv_liste=liste1
 	for i in range(len(liste2)):
 		OK=1
@@ -201,7 +197,7 @@ def fenetre_princ(pseudo, client):
 	Label4 = Label(Frame3, text = 'Utilisateurs connectés', fg = 'black', bg="lightgrey")
 	Label4.pack(padx=5,pady=5, side=TOP)
 
-	client.StringVar_pseudo_list = StringVar()
+	client.StringVar_pseudo_list = StringVar(None, pseudo)
 	Label5 = Label(Frame3, textvariable = client.StringVar_pseudo_list, fg = 'black', bg="lightgrey") #liste des utilisateurs connectés
 	Label5.pack(padx=5,pady=5)
 
@@ -237,10 +233,8 @@ def fenetre_princ(pseudo, client):
 class Serveur(threading.Thread):
 	"""Class chargée du serveur."""
 
-	def __init__(self, pseudo=""):
+	def __init__(self):
 		self.socket_list = []
-
-		self.pseudo = pseudo
 
 		self.client = None # Sera défini après.
 
@@ -273,7 +267,20 @@ class Serveur(threading.Thread):
 					# Reception des données...
 					data = sock.recv(size)
 					if data:
-						self.socket_list[1].send(data) # Envoi du message à notre client local
+						data = pickle.loads(data) # Décodage de ces données
+						if data[3] == "SYSTEM" and data[1] == "NEW_CONN": # Message système, reception d'un nouveau pseudo
+							if data[2] in client.pseudo_list:
+								sendTimedMessage("DISCONNECT_BAD_PSEUDO","SYSTEM", [sock]) # déconnecte de force, le nouvel arrivé à déjà un pseudo existant.
+							else:
+								client.pseudo_list.append(data[2])
+								client.update_StringVar_pseudo_list()
+								sendTimedMessage(client.pseudo_list,"SYSTEM") # Envoi à tout le monde sa liste, mise à jour.
+								if isinstance(client.msg,StringVar): # Interface graphique ?
+									messages_prec=client.msg.get()
+									client.msg.set(messages_prec+data[2]+" est maintenant connecté"+"\n") # Affiche le message de connection
+	
+						else:
+							self.socket_list[1].send(pickle.dumps(data)) # Envoi du message à notre client local
 
 					else:
 					# Il n'y a rien, le client est sans doute déconnecté
@@ -290,7 +297,8 @@ class Serveur(threading.Thread):
 class Client(threading.Thread):
 	"""Class chargée du client. Prend en argument le serveur local."""
 	def __init__(self, serveur, pseudo="", ):
-		self.pseudo = pseudo
+
+		self.pseudo=pseudo
 
 		self.msg = None # Le type sera changé par fentere_princ()
 		self.StringVar_pseudo_list = None
@@ -338,11 +346,14 @@ class Client(threading.Thread):
 								messages_prec=self.msg.get()
 								self.msg.set(messages_prec+data[2]+" est déconnecté"+"\n") # Affiche le message de connection
 								self.update_StringVar_pseudo_list()
-							else:
-								if isinstance(self.msg,StringVar) and data[2] not in self.pseudo_list: # Un nouveau connecté ?
-									messages_prec=self.msg.get()
-									self.msg.set(messages_prec+data[2]+" est maintenant connecté"+"\n") # Affiche le message de connection
 
+							elif data[1] == "DISCONNECT_BAD_PSEUDO":
+								if isinstance(self.msg,StringVar):
+									messages_prec=self.msg.get()
+									self.msg.set("Déconnection générale, mauvais pseudo.\n") # Affiche le message de déconnection
+								shutdown(True)
+
+							elif type(data[1]) is list:
 								isNew, self.pseudo_list = diff_pseudo(data[1],self.pseudo_list)
 								if isNew:
 									sendTimedMessage(self.pseudo_list,"SYSTEM")
@@ -361,11 +372,9 @@ class Client(threading.Thread):
 			print("CLIENT: Connecté au serveur distant d'ip "+str(ip)+".")
 			serveur.socket_list.append(ysock) # On l'ajoute à la liste du serveur.
 
-			if len(self.pseudo_list) == 0:
-				self.pseudo_list.append(self.pseudo)
-			sendTimedMessage(self.pseudo_list,"SYSTEM") # Envoi son pseudo à l'adresse du système
+			sendTimedMessage("NEW_CONN","SYSTEM",[ysock]) # Envoi son pseudo au serveur distant, pour vérification
 		except Exception as e:
-				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port_serveur, e))
+				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port, e))
 
 	def update_StringVar_pseudo_list(self):
 		"""
@@ -385,6 +394,7 @@ serveur = Serveur()
 serveur.start()
 time.sleep(1)
 client = Client(serveur)
+serveur.client=client
 client.start()
 time.sleep(1)
 
@@ -394,7 +404,8 @@ else:
 	pseudo = args.serveur
 
 serveur.pseudo = pseudo
-client.pseudo = pseudo
+client.pseudo=pseudo
+client.pseudo_list.append(pseudo)
 
 #client.ConnectNewServer("", 6667) #Connecte sur une autre instance s'executant sur le port 6667 du même ordinateur.
 if args.serveur == None:
