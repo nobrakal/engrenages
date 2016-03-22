@@ -41,7 +41,15 @@ def shutdown():
 		serveur.socket_list.remove(sock)
 		sock.close()
 
-def fusion_listes(liste1,liste2):
+def diff_pseudo(liste1, liste2):
+	"""
+	Compare et fusionne deux listes de pseudos
+	"""
+	print("TODO")
+	if liste1 != liste2:
+		isNew=True
+	else:
+		isNew=False
 	nouv_liste=liste1
 	for i in range(len(liste2)):
 		OK=1
@@ -52,19 +60,7 @@ def fusion_listes(liste1,liste2):
 		if OK==1:
 			nouv_liste=nouv_liste+[liste2[i]]
 	
-	return nouv_liste
-
-
-def diff_pseudo(liste1, liste2):
-	"""
-	Compare et fusionne deux listes de pseudos
-	"""
-	print("TODO")
-	if liste1 != liste2:
-		isNew=True
-	else:
-		isNew=False
-	return (isNew ,liste1 + liste2)
+	return (isNew,nouv_liste)
 
 def choix_ip_et_destroy(client, Authentification):
 	"""
@@ -73,6 +69,7 @@ def choix_ip_et_destroy(client, Authentification):
 	Authentification.destroy()
 	choisir_ip(client)
 
+	
 def MP():
 	Message_prive=Tk()
 	Message_prive.title('Engrenages')
@@ -102,7 +99,6 @@ def MP():
 	Bouton1.pack(padx = 5, pady=5)
 
 	Message_prive.mainloop()
-	
 	
 def identification(client):
 	"""
@@ -228,7 +224,6 @@ def fenetre_princ(pseudo, client):
 	Bouton2 = Button(Frame5, text = 'Déconnexion', command = shutdown)
 	Bouton2.pack(padx=5,pady=5, side= LEFT)
 	
-	
 	Frame6 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
 	Frame6.place(x=50,y=360)
 	
@@ -270,10 +265,9 @@ class Serveur(threading.Thread):
 				if sock == self.s:
 					newsocket, addr = self.s.accept()
 					self.socket_list.append(newsocket)
-					if addr[0] not in self.ip_list: #Exception pour le local
-						self.ip_list.append(addr[0])
-						self.socket_list[1].send(pickle.dumps(addr)) # Envoi de l'ip à notre client local pour qu'il puisse se connecter
-						print ("SERVEUR: Client connecté, d'adresse: "+str(addr[0]))
+#					self.ip_list.append(addr[0])
+					self.socket_list[1].send(pickle.dumps(addr)) # Envoi de l'ip à notre client local pour qu'il puisse se connecter
+					print ("SERVEUR: Client connecté, d'adresse: "+str(addr[0]))
 
 				# Un message d'un client existant
 				else:
@@ -326,6 +320,7 @@ class Client(threading.Thread):
 				data = pickle.loads(data) # Décodage de ces données
 
 				if type(data) is tuple:
+					print("CC")
 					self.ConnectNewServer(data[0]) # Reception de l'ip, on se connecte
 
 				elif data[0] not in self.id_list: # data[0] correspond à l'id du message
@@ -340,7 +335,7 @@ class Client(threading.Thread):
 						sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 					else: #Il s'agit d'un message privé
-						if data[3] == pseudo: # Qui nous est destiné
+						if data[3] == self.pseudo: # Qui nous est destiné
 							if isinstance(self.msg,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
 								messages_prec=self.msg.get()
 								self.msg.set(messages_prec+data[2]+" vous chuchotte: "+data[1]+"\n") # Affiche le message
@@ -379,11 +374,14 @@ class Client(threading.Thread):
 		try:
 			if ip not in serveur.ip_list:
 				ysock.connect((ip,port))# On se connecte au nouveau serveur.
+				serveur.ip_list.append(ip)
 				self.socket_list.append(ysock)
 				if len(self.socket_list) > 2:
 					print("CLIENT: Connecté au serveur distant d'ip "+str(ip)+".")
 				else:
 					print("CLIENT: Connecté au serveur local")
+				if len(self.pseudo_list) == 0:
+					self.pseudo_list.append(self.pseudo)
 				sendTimedMessage(self.pseudo_list,"SYSTEM") # Envoi son pseudo à l'adresse du système
 		except Exception as e:
 				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port_serveur, e))
@@ -416,7 +414,6 @@ else:
 
 serveur.pseudo = pseudo
 client.pseudo = pseudo
-client.pseudo_list.append(pseudo)
 
 #client.ConnectNewServer("", 6667) #Connecte sur une autre instance s'executant sur le port 6667 du même ordinateur.
 if args.serveur == None:
