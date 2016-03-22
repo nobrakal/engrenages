@@ -195,7 +195,7 @@ def fenetre_princ(pseudo, client):
 	Frame2.place(x=15,y=75)
 
 	client.msg = StringVar()
-	Label3 = Label(Frame2, textvariable = client.msg, fg = 'black', bg="white") #affiche les messages précédents
+	Label3 = Label(Frame2, textvariable = client.msg, fg = 'black', bg="white",height=15,width=70) #affiche les messages précédents
 	Label3.pack(padx=5,pady=5, side=TOP)
 
 	Frame3 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
