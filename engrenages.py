@@ -21,7 +21,10 @@ def sendTimedMessage(msg, destinataire="",socket_list="DEFAULT"):
 		socket_list=serveur.socket_list[1:]
 	time = str(datetime.datetime.now())
 	client.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
-	if destinataire != "SYSTEM": # N'affiche pas messages privés
+	if destinataire != "" and destinataire != "SYSTEM": # N'affiche pas messages privés
+		messages_prec=client.msg.get()
+		client.msg.set(messages_prec+client.pseudo+" chuchote: "+msg+"\n") # Affiche le message
+	elif destinataire == "" and destinataire != "SYSTEM":
 		messages_prec=client.msg.get()
 		client.msg.set(messages_prec+client.pseudo+": "+msg+"\n") # Affiche le message
 	for sock in socket_list:
@@ -66,6 +69,11 @@ def choix_ip_et_destroy(client, Authentification):
 	Authentification.destroy()
 	choisir_ip(client)
 
+def sendMPandDestroy(msg, pseudo,Message_prive ):
+	print(msg)
+	print(pseudo)
+	sendTimedMessage(msg,pseudo)
+	Message_prive.destroy()
 	
 def MP():
 	Message_prive=Tk()
@@ -79,20 +87,17 @@ def MP():
 	Label1 = Label(Frame1, text = "Quel est le pseudo de l'utilisateur à qui vous souhaitez envoyer un message?", fg = 'black')
 	Label1.pack(padx=5,pady=5)
 
-	Pseudo= StringVar()
-	Champ = Entry(Frame1, textvariable= Pseudo, bg ='white', fg='lightgrey')
+	Champ = Entry(Frame1, bg ='white', fg='grey')
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5)
 	
 	Label2 = Label(Frame1, text = "Quel est votre message?", fg = 'black')
 	Label2.pack(padx=5,pady=5)
 	
-	Message=StringVar()
-	Champ1 = Entry(Frame1, textvariable= Message, bg ='white', fg='lightgrey')
-	Champ1.focus_set()
+	Champ1 = Entry(Frame1, bg ='white', fg='grey')
 	Champ1.pack(padx=5, pady=5)
 
-	Bouton1 = Button(Frame1, text = 'Valider', command = Message_prive.destroy)
+	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: sendMPandDestroy(Champ.get(),Champ1.get(),Message_prive))
 	Bouton1.pack(padx = 5, pady=5)
 
 	Message_prive.mainloop()
@@ -212,7 +217,7 @@ def fenetre_princ(pseudo, client):
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5, side=LEFT)
 
-	Bouton1 = Button(Frame4, text = 'Envoyer', command = lambda: sendTimedMessage(Message.get()))  #Remplacer la commande par celle d'envoi de message
+	Bouton1 = Button(Frame4, text = 'Envoyer', command = lambda: sendTimedMessage(Message.get()))  #Envoi un message
 	Bouton1.pack(padx=5,pady=5, side= LEFT)
 
 	Frame5 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
