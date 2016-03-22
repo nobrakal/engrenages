@@ -18,10 +18,11 @@ def sendTimedMessage(msg, destinataire="",socket_list="DEFAULT"):
 	"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste. Si destinataire est défini, le message ne sera lu que par la personne
 	portant le pseudo mis dans destinataire"""
 	if socket_list=="DEFAULT":
-		socket_list=client.socket_list[1:]
+		socket_list=serveur.socket_list[1:]
+	print(str(len(socket_list)))
 	time = str(datetime.datetime.now())
 	client.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
-	if destinataire == "": # N'affiche pas messages privés
+	if destinataire != "SYSTEM": # N'affiche pas messages privés
 		messages_prec=client.msg.get()
 		client.msg.set(messages_prec+client.pseudo+": "+msg+"\n") # Affiche le message
 	for sock in socket_list:
@@ -34,9 +35,9 @@ def sendMessage(msg, socket_list):
 
 def shutdown():
 	sendTimedMessage("DISCONNECT","SYSTEM") # Envoi le message de déconnection
-	for sock in client.socket_list:
-		client.socket_list.remove(sock)
-		sock.close()
+#	for sock in client.socket_list:
+#		client.socket_list.remove(sock)
+#		sock.close()
 	for sock in serveur.socket_list:
 		serveur.socket_list.remove(sock)
 		sock.close()
@@ -241,7 +242,7 @@ class Serveur(threading.Thread):
 
 		self.pseudo = pseudo
 
-		self.ip_list = []
+		self.client = None # Sera défini après.
 
 		self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -259,14 +260,12 @@ class Serveur(threading.Thread):
 		print("SERVEUR: Client local connecté")
 		while 1:
 			# prend une liste des socket prêt à être lu.
-			ready_to_read, ready_to_write, in_error = select.select(self.socket_list,[],[])
+			ready_to_read, ready_to_write, in_error = select.select(self.socket_list,self.socket_list,[])
 			for sock in ready_to_read:
 				# Une nouvelle connection!
 				if sock == self.s:
 					newsocket, addr = self.s.accept()
 					self.socket_list.append(newsocket)
-#					self.ip_list.append(addr[0])
-					self.socket_list[1].send(pickle.dumps(addr)) # Envoi de l'ip à notre client local pour qu'il puisse se connecter
 					print ("SERVEUR: Client connecté, d'adresse: "+str(addr[0]))
 
 				# Un message d'un client existant
@@ -279,7 +278,6 @@ class Serveur(threading.Thread):
 					else:
 					# Il n'y a rien, le client est sans doute déconnecté
 						if sock in self.socket_list:
-							self.ip_list.remove(sock.getpeername())
 							self.socket_list.remove(sock)
 							sock.close()
 						print("SERVEUR: Client perdu")
@@ -297,33 +295,25 @@ class Client(threading.Thread):
 		self.msg = None # Le type sera changé par fentere_princ()
 		self.StringVar_pseudo_list = None
 
-		self.socket_list = []
+		self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.id_list=[]
 		self.pseudo_list = [] # Ajoute notre pseudo à la liste des pseudos (précédé du nom du premier socket, le notre)
-
-		self.c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-		self.socket_list.append(self.c)
 
 		threading.Thread.__init__(self)
 
 	def run(self):
 		"""Code à exécuter pendant l'exécution du client."""
 		#On se connecte au serveur local
-		self.ConnectNewServer('')
+		self.server_sock.connect(('',port_serveur))
 		while 1:
 			# Un message d'un client existant
-			data = self.socket_list[1].recv(size) # Reception des données...
+			data = self.server_sock.recv(size) # Reception des données...
 
 			if data:
 	                	# Des données sont arrivées
 				data = pickle.loads(data) # Décodage de ces données
 
-				if type(data) is tuple:
-					print("CC")
-					self.ConnectNewServer(data[0]) # Reception de l'ip, on se connecte
-
-				elif data[0] not in self.id_list: # data[0] correspond à l'id du message
+				if data[0] not in self.id_list: # data[0] correspond à l'id du message
 					self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
 
 					if data[3] == "": # Message non privé
@@ -332,7 +322,7 @@ class Client(threading.Thread):
 							self.msg.set(messages_prec+data[2]+": "+data[1]+"\n") # Affiche le message
 						else:
 							print(data[2]+": "+data[1]+"\n")
-						sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+						sendMessage(data, serveur.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 					else: #Il s'agit d'un message privé
 						if data[3] == self.pseudo: # Qui nous est destiné
@@ -358,12 +348,7 @@ class Client(threading.Thread):
 									sendTimedMessage(self.pseudo_list,"SYSTEM")
 									self.update_StringVar_pseudo_list()
 
-						sendMessage(data, self.socket_list[1:])
-
-			if len(self.socket_list) < 1: # Cas où il ne reste plus qu'un seul socket, le notre.
-				print("SERVEUR: Fermeture, plus aucun client connecté")
-				self.s.close()
-				return 0
+						sendMessage(data, serveur.socket_list[1:])
 
 	def ConnectNewServer(self, ip, port=port_serveur):
 		"""
@@ -372,17 +357,13 @@ class Client(threading.Thread):
 		# Création d'un socket pour la nouvelle connection
 		ysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		try:
-			if ip not in serveur.ip_list:
-				ysock.connect((ip,port))# On se connecte au nouveau serveur.
-				serveur.ip_list.append(ip)
-				self.socket_list.append(ysock)
-				if len(self.socket_list) > 2:
-					print("CLIENT: Connecté au serveur distant d'ip "+str(ip)+".")
-				else:
-					print("CLIENT: Connecté au serveur local")
-				if len(self.pseudo_list) == 0:
-					self.pseudo_list.append(self.pseudo)
-				sendTimedMessage(self.pseudo_list,"SYSTEM") # Envoi son pseudo à l'adresse du système
+			ysock.connect((ip,port))# On se connecte au nouveau serveur.
+			print("CLIENT: Connecté au serveur distant d'ip "+str(ip)+".")
+			serveur.socket_list.append(ysock) # On l'ajoute à la liste du serveur.
+
+			if len(self.pseudo_list) == 0:
+				self.pseudo_list.append(self.pseudo)
+			sendTimedMessage(self.pseudo_list,"SYSTEM") # Envoi son pseudo à l'adresse du système
 		except Exception as e:
 				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port_serveur, e))
 
