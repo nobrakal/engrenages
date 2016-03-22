@@ -41,6 +41,20 @@ def shutdown():
 		serveur.socket_list.remove(sock)
 		sock.close()
 
+def fusion_listes(liste_1,liste_2):
+	nouv_liste=liste_1
+	for i in range(len(liste_2)):
+		OK=1
+		for j in range(len(liste_1)):
+			if liste_1[j]==liste_2[i]:
+				OK=0
+		
+		if OK==1:
+			nouv_liste=nouv_liste+[liste_2[i]]
+	
+	return nouv_liste
+
+
 def diff_pseudo(liste1, liste2):
 	"""
 	Compare et fusionne deux listes de pseudos
