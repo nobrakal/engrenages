@@ -73,6 +73,37 @@ def choix_ip_et_destroy(client, Authentification):
 	Authentification.destroy()
 	choisir_ip(client)
 
+def MP():
+	Message_prive=Tk()
+	Message_prive.title('Engrenages')
+	Message_prive.geometry('450x180')
+	Message_prive['bg']='bisque'
+
+	Frame1 = Frame(Message_prive,borderwidth=3,relief=GROOVE)
+	Frame1.pack(padx=10,pady=10)
+	
+	Label1 = Label(Frame1, text = "Quel est le pseudo de l'utilisateur à qui vous souhaitez envoyer un message?", fg = 'black')
+	Label1.pack(padx=5,pady=5)
+
+	Pseudo= StringVar()
+	Champ = Entry(Frame1, textvariable= Pseudo, bg ='white', fg='lightgrey')
+	Champ.focus_set()
+	Champ.pack(padx=5, pady=5)
+	
+	Label2 = Label(Frame1, text = "Quel est votre message?", fg = 'black')
+	Label2.pack(padx=5,pady=5)
+	
+	Message=StringVar()
+	Champ1 = Entry(Frame1, textvariable= Message, bg ='white', fg='lightgrey')
+	Champ1.focus_set()
+	Champ1.pack(padx=5, pady=5)
+
+	Bouton1 = Button(Frame1, text = 'Valider', command = Message_prive.destroy)
+	Bouton1.pack(padx = 5, pady=5)
+
+	Message_prive.mainloop()
+	
+	
 def identification(client):
 	"""
 	Fenêtre d'identification qui permet à l'utilisateur de choisir son pseudo et de créer ou rejoindre un serveur
