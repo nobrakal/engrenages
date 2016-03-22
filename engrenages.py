@@ -41,16 +41,16 @@ def shutdown():
 		serveur.socket_list.remove(sock)
 		sock.close()
 
-def fusion_listes(liste_1,liste_2):
-	nouv_liste=liste_1
-	for i in range(len(liste_2)):
+def fusion_listes(liste1,liste2):
+	nouv_liste=liste1
+	for i in range(len(liste2)):
 		OK=1
-		for j in range(len(liste_1)):
-			if liste_1[j]==liste_2[i]:
+		for j in range(len(liste1)):
+			if liste1[j]==liste2[i]:
 				OK=0
 		
 		if OK==1:
-			nouv_liste=nouv_liste+[liste_2[i]]
+			nouv_liste=nouv_liste+[liste2[i]]
 	
 	return nouv_liste
 
