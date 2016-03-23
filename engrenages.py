@@ -21,12 +21,10 @@ def sendTimedMessage(msg, destinataire="",socket_list="DEFAULT"):
 		socket_list=serveur.socket_list[1:]
 	time = str(datetime.datetime.now())
 	client.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
-	if destinataire != "" and destinataire != "SYSTEM": # N'affiche pas messages privés
-		messages_prec=client.msg.get()
-		client.msg.set(messages_prec+client.pseudo+" chuchote: "+msg+"\n") # Affiche le message
-	elif destinataire == "" and destinataire != "SYSTEM":
-		messages_prec=client.msg.get()
-		client.msg.set(messages_prec+client.pseudo+": "+msg+"\n") # Affiche le message
+	if destinataire == "":
+		client.update_StringVar_msg(client.pseudo+": "+msg) # Affiche le message
+	elif destinataire != "" and destinataire != "SYSTEM": # N'affiche pas messages privés
+		client.update_StringVar_msg("Vous chuchotez à "+destinataire+": "+msg) # Affiche le message
 	for sock in socket_list:
 		sock.send(pickle.dumps([time,msg,client.pseudo,destinataire])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
 
@@ -46,19 +44,21 @@ def diff_pseudo(liste1, liste2):
 	"""
 	Compare et fusionne deux listes de pseudos
 	"""
-	if set(liste1) == set(liste2):
+	nouv_liste=liste1
+	if set(liste1) == set(liste2): # Compare les deux listes, quelques soit leur ordre.
 		isNew=False
+
 	else:
 		isNew=True
-	nouv_liste=liste1
-	for i in range(len(liste2)):
-		OK=1
-		for j in range(len(liste1)):
-			if liste1[j]==liste2[i]:
-				OK=0
+		for i in range(len(liste2)):
+			OK=1
+			for j in range(len(liste1)):
+				if liste1[j]==liste2[i]:
+					OK=0
 		
-		if OK==1:
-			nouv_liste=nouv_liste+[liste2[i]]
+			if OK==1:
+				nouv_liste=nouv_liste+[liste2[i]]
+				
 	
 	return (isNew,nouv_liste)
 
@@ -97,7 +97,7 @@ def MP():
 	Champ1 = Entry(Frame1, bg ='white', fg='grey')
 	Champ1.pack(padx=5, pady=5)
 
-	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: sendMPandDestroy(Champ.get(),Champ1.get(),Message_prive))
+	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: sendMPandDestroy(Champ1.get(),Champ.get(),Message_prive))
 	Bouton1.pack(padx = 5, pady=5)
 
 	Message_prive.mainloop()
@@ -202,7 +202,7 @@ def fenetre_princ(pseudo, client):
 	Label4 = Label(Frame3, text = 'Utilisateurs connectés', fg = 'black', bg="lightgrey")
 	Label4.pack(padx=5,pady=5, side=TOP)
 
-	client.StringVar_pseudo_list = StringVar(None, pseudo)
+	client.StringVar_pseudo_list = StringVar(value=pseudo)
 	Label5 = Label(Frame3, textvariable = client.StringVar_pseudo_list, fg = 'black', bg="lightgrey") #liste des utilisateurs connectés
 	Label5.pack(padx=5,pady=5)
 
@@ -279,11 +279,9 @@ class Serveur(threading.Thread):
 							else:
 								client.pseudo_list.append(data[2])
 								client.update_StringVar_pseudo_list()
+								client.update_StringVar_msg(data[2]+" est maintenant connecté") # Affiche le message de connection
 								sendTimedMessage(client.pseudo_list,"SYSTEM") # Envoi à tout le monde sa liste, mise à jour.
-								if isinstance(client.msg,StringVar): # Interface graphique ?
-									messages_prec=client.msg.get()
-									client.msg.set(messages_prec+data[2]+" est maintenant connecté"+"\n") # Affiche le message de connection
-	
+
 						else:
 							self.socket_list[1].send(pickle.dumps(data)) # Envoi du message à notre client local
 
@@ -330,32 +328,20 @@ class Client(threading.Thread):
 					self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
 
 					if data[3] == "": # Message non privé
-						if isinstance(self.msg,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
-							messages_prec=self.msg.get()
-							self.msg.set(messages_prec+data[2]+": "+data[1]+"\n") # Affiche le message
-						else:
-							print(data[2]+": "+data[1]+"\n")
-						sendMessage(data, serveur.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+						self.update_StringVar_msg(data[2]+": "+data[1]) # Affiche le message
 
 					else: #Il s'agit d'un message privé
 						if data[3] == self.pseudo: # Qui nous est destiné
-							if isinstance(self.msg,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
-								messages_prec=self.msg.get()
-								self.msg.set(messages_prec+data[2]+" vous chuchotte: "+data[1]+"\n") # Affiche le message
-							else:
-								print(data[2]+" vous chuchote: "+data[1]+"\n")
+							self.update_StringVar_msg(data[2]+" vous chuchotte: "+data[1]) # Affiche le message
 
 						elif data[3] == "SYSTEM": # Message système, reception d'un pseudo, ou d'une liste de pseudo
 							if data[1] == "DISCONNECT":
 								self.pseudo_list.remove(data[2])
-								messages_prec=self.msg.get()
-								self.msg.set(messages_prec+data[2]+" est déconnecté"+"\n") # Affiche le message de connection
 								self.update_StringVar_pseudo_list()
+								self.update_StringVar_msg(data[2]+" est déconnecté") # Affiche le message de connection
 
 							elif data[1] == "DISCONNECT_BAD_PSEUDO":
-								if isinstance(self.msg,StringVar):
-									messages_prec=self.msg.get()
-									self.msg.set("Déconnection générale, mauvais pseudo.\n") # Affiche le message de déconnection
+								self.update_StringVar_msg("Déconnection générale, mauvais pseudo.") # Affiche le message de déconnection
 								shutdown(True)
 
 							elif type(data[1]) is list:
@@ -364,7 +350,7 @@ class Client(threading.Thread):
 									sendTimedMessage(self.pseudo_list,"SYSTEM")
 									self.update_StringVar_pseudo_list()
 
-						sendMessage(data, serveur.socket_list[1:])
+					sendMessage(data, serveur.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 	def ConnectNewServer(self, ip, port=port_serveur):
 		"""
@@ -385,11 +371,23 @@ class Client(threading.Thread):
 		"""
 		Met à jour graphiquement la liste de pseudo
 		"""
+		while isinstance(self.StringVar_pseudo_list,StringVar) == False: # Attends l'initialisation de la fenêtre graphique
+			pass
 		if isinstance(self.StringVar_pseudo_list,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
 			j = ""
 			for i in self.pseudo_list:
 				j += i+"\n"
-			self.StringVar_pseudo_list.set(j) # Affiche la liste de pseudos	
+			self.StringVar_pseudo_list.set(j) # Affiche la liste de pseudos
+
+	def update_StringVar_msg(self, new_message):
+		"""
+		Met à jour la liste des messages. Prend en argument new_message, un string.
+		"""
+		while isinstance(self.msg,StringVar) == False: # Attends l'initialisation de la fenêtre graphique
+			pass
+		if isinstance(self.msg,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
+			messages_prec=self.msg.get()
+			self.msg.set(messages_prec+new_message+"\n")
 
 parser = argparse.ArgumentParser() # Prend en compte les arguments
 parser.add_argument("--serveur", help="Lance engrengages en mode serveur. Prends le pseudo en argument")
