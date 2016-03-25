@@ -172,11 +172,41 @@ def choisir_ip(client):
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5)
 
-	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: connect_and_destroy(client,IP.get(),Choix_IP)) #***********
+	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: connect_and_destroy(client,IP.get(),Choix_IP))
 	Bouton1.pack(padx = 5, pady=5)
 
 	Choix_IP.mainloop()
 
+def nouv_connection():
+	Nouvelle_connection=Tk()
+	Nouvelle_connection.title('Engrenages')
+	Nouvelle_connection.geometry('300x180')
+	Nouvelle_connection['bg']='bisque'
+
+	Frame1 = Frame(Nouvelle_connection,borderwidth=3,relief=GROOVE)
+	Frame1.pack(padx=10,pady=10)
+
+	Label1 = Label(Frame1, text = "Quelle est l'adresse IP du serveur à rejoindre?", fg = 'black')
+	Label1.pack(padx=5,pady=5)
+
+	IP= StringVar()
+	Champ = Entry(Frame1, textvariable= IP, bg ='white', fg='grey')
+	Champ.focus_set()
+	Champ.pack(padx=5, pady=5)
+	
+	Label2 = Label(Frame1, text = "Quel port souhaitez-vous utiliser?", fg = 'black')
+	Label2.pack(padx=5,pady=5)
+	
+	Port= StringVar()
+	Champ1 = Entry(Frame1, textvariable= Port, bg ='white', fg='grey')
+	Champ1.focus_set()
+	Champ1.pack(padx=5, pady=5)
+
+	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: connect_and_destroy(client,IP.get(),Nouvelle_connection))
+	Bouton1.pack(padx = 5, pady=5)
+
+	Nouvelle_connection.mainloop()
+	
 def fenetre_princ(pseudo, client):
 	Engrenages = Tk()
 	Engrenages.title('Engrenages:'+ pseudo)
@@ -227,10 +257,16 @@ def fenetre_princ(pseudo, client):
 	Bouton2.pack(padx=5,pady=5, side= LEFT)
 	
 	Frame6 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
-	Frame6.place(x=50,y=360)
+	Frame6.place(x=50,y=350)
 	
 	Bouton3 = Button(Frame6, text = 'Message Privé', command = MP )
 	Bouton3.pack(padx=5,pady=5)
+	
+	Frame7 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
+	Frame7.place(x=550,y=310)
+	
+	Bouton4 = Button(Frame7, text = 'Connexion simultanée', command = nouv_connection )
+	Bouton4.pack(padx=5,pady=5)
 
 	# Lancement du gestionnaire d'événements
 	Engrenages.mainloop()
