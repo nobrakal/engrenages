@@ -62,12 +62,12 @@ def diff_pseudo(liste1, liste2):
 	
 	return (isNew,nouv_liste)
 
-def choix_ip_et_destroy(client, Authentification):
+def choix_ip_et_destroy(Authentification):
 	"""
 	Fonction écran permettant d'éxécuter deux sous fonctions pour un seul boutton.
 	"""
 	Authentification.destroy()
-	choisir_ip(client)
+	choisir_ip()
 
 def sendMPandDestroy(msg, pseudo,Message_prive ):
 	print(msg)
@@ -133,7 +133,7 @@ def identification(client):
 	Label2 = Label(Frame2, text = 'Que souhaitez-vous faire?', fg = 'black', bg='lightgrey')
 	Label2.pack(pady=5)
 
-	Bouton1 = Button(Frame2, text = 'Rejoindre un serveur existant', command = lambda: choix_ip_et_destroy(client, Authentification)) #***********
+	Bouton1 = Button(Frame2, text = 'Rejoindre un serveur existant', command = lambda: choix_ip_et_destroy(Authentification)) #***********
 	Bouton1.pack(side=LEFT, padx = 5, pady=5)
 
 	Bouton2 = Button(Frame2, text = 'Créer un nouveau serveur', command = Authentification.destroy) #************
@@ -148,36 +148,14 @@ def identification(client):
 
 	return Pseudo.get()
 
-def connect_and_destroy(client,ip,fenetre):
+def connect_and_destroy(ip,fenetre,port=port_serveur):
 	"""
 	Fonction écran permettant d'éxécuter deux sous fonctions pour un seul boutton.
 	"""
-	client.ConnectNewServer(ip)
+	client.ConnectNewServer(ip, port)
 	fenetre.destroy()
 
-def choisir_ip(client):
-	Choix_IP=Tk()
-	Choix_IP.title('Engrenages')
-	Choix_IP.geometry('300x150')
-	Choix_IP['bg']='bisque'
-
-	Frame1 = Frame(Choix_IP,borderwidth=3,relief=GROOVE)
-	Frame1.pack(padx=10,pady=10)
-
-	Label1 = Label(Frame1, text = "Quelle est l'adresse IP du serveur à rejoindre?", fg = 'black')
-	Label1.pack(padx=5,pady=5)
-
-	IP= StringVar()
-	Champ = Entry(Frame1, textvariable= IP, bg ='white', fg='grey')
-	Champ.focus_set()
-	Champ.pack(padx=5, pady=5)
-
-	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: connect_and_destroy(client,IP.get(),Choix_IP))
-	Bouton1.pack(padx = 5, pady=5)
-
-	Choix_IP.mainloop()
-
-def nouv_connection():
+def choisir_ip():
 	Nouvelle_connection=Tk()
 	Nouvelle_connection.title('Engrenages')
 	Nouvelle_connection.geometry('300x180')
@@ -189,8 +167,7 @@ def nouv_connection():
 	Label1 = Label(Frame1, text = "Quelle est l'adresse IP du serveur à rejoindre?", fg = 'black')
 	Label1.pack(padx=5,pady=5)
 
-	IP= StringVar()
-	Champ = Entry(Frame1, textvariable= IP, bg ='white', fg='grey')
+	Champ = Entry(Frame1, bg ='white', fg='grey')
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5)
 	
@@ -198,11 +175,12 @@ def nouv_connection():
 	Label2.pack(padx=5,pady=5)
 	
 	Port= StringVar()
+	Port.set(port_serveur)
 	Champ1 = Entry(Frame1, textvariable= Port, bg ='white', fg='grey')
 	Champ1.focus_set()
 	Champ1.pack(padx=5, pady=5)
 
-	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: connect_and_destroy(client,IP.get(),Nouvelle_connection))
+	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: connect_and_destroy(Champ.get(),Nouvelle_connection, int(Port.get())))
 	Bouton1.pack(padx = 5, pady=5)
 
 	Nouvelle_connection.mainloop()
@@ -265,7 +243,7 @@ def fenetre_princ(pseudo, client):
 	Frame7 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
 	Frame7.place(x=550,y=310)
 	
-	Bouton4 = Button(Frame7, text = 'Connexion simultanée', command = nouv_connection )
+	Bouton4 = Button(Frame7, text = 'Connexion simultanée', command = choisir_ip )
 	Bouton4.pack(padx=5,pady=5)
 
 	# Lancement du gestionnaire d'événements
