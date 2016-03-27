@@ -33,12 +33,22 @@ def sendMessage(msg, socket_list):
 	for sock in socket_list:
 		sock.send(pickle.dumps(msg)) # Envoi du message.
 
-def shutdown(forced=False):
+def quit(fenetre="", forced=True):
+	fenetre.destroy()
 	if forced == False:
 		sendTimedMessage("DISCONNECT","SYSTEM") # Envoi le message de déconnection
-	for sock in serveur.socket_list:
-		serveur.socket_list.remove(sock)
-		sock.close()
+	else:
+		serveur.socket_list[1].send(pickle.dumps("THE_END"))
+		for sock in serveur.socket_list:
+			serveur.socket_list.remove(sock)
+			sock.close()
+		serveur.running = False
+		serveur.join()
+		print("SERVEUR: Fermeture...")
+		client.join()
+		print("CLIENT: See you soon")
+
+		raise SystemExit
 
 def diff_pseudo(liste1, liste2):
 	"""
@@ -112,6 +122,8 @@ def identification(client):
 	Authentification.geometry('410x170')
 	Authentification['bg']='bisque' # couleur de fond
 
+	Authentification.protocol("WM_DELETE_WINDOW",lambda: quit(Authentification)) # Utilise une fonction maison pour quitter
+
 	#Création de deux sous-fenêtres
 	Frame1 = Frame(Authentification,borderwidth=2,relief=GROOVE)
 	Frame1.pack(padx=10,pady=10)
@@ -139,10 +151,6 @@ def identification(client):
 	Bouton2 = Button(Frame2, text = 'Créer un nouveau serveur', command = Authentification.destroy) #************
 	Bouton2.pack(side=LEFT, padx = 5, pady=5)
 
-	# Création d'un bouton quitter
-	Bouton3 = Button(Frame2, text = 'Quitter', command = Authentification.destroy)
-	Bouton3.pack(side=LEFT, padx = 5, pady=5)
-
 	# Lancement du gestionnaire d'événements
 	Authentification.mainloop()
 
@@ -154,6 +162,7 @@ def connect_and_destroy(ip,fenetre,port=port_serveur):
 	"""
 	client.ConnectNewServer(ip, port)
 	fenetre.destroy()
+	raise SystemExit
 
 def choisir_ip():
 	Nouvelle_connection=Tk()
@@ -190,6 +199,8 @@ def fenetre_princ(pseudo, client):
 	Engrenages.title('Engrenages:'+ pseudo)
 	Engrenages.geometry('700x400')
 	Engrenages['bg']='bisque' # couleur de fond
+
+	Engrenages.protocol("WM_DELETE_WINDOW",lambda: quit(Engrenages)) # Utilise une fonction maison pour quitter
 
 	Frame1 = Frame(Engrenages,borderwidth=3,relief=GROOVE)
 	Frame1.pack(padx=10,pady=10)
@@ -231,7 +242,7 @@ def fenetre_princ(pseudo, client):
 	Frame5 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
 	Frame5.place(x=575,y=360)
 
-	Bouton2 = Button(Frame5, text = 'Déconnexion', command = shutdown)
+	Bouton2 = Button(Frame5, text = 'Quitter', command =lambda: quit(Engrenages))
 	Bouton2.pack(padx=5,pady=5, side= LEFT)
 	
 	Frame6 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
@@ -243,7 +254,7 @@ def fenetre_princ(pseudo, client):
 	Frame7 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
 	Frame7.place(x=550,y=310)
 	
-	Bouton4 = Button(Frame7, text = 'Connexion simultanée', command = choisir_ip )
+	Bouton4 = Button(Frame7, text = 'Nouvelle connexion', command = choisir_ip )
 	Bouton4.pack(padx=5,pady=5)
 
 	# Lancement du gestionnaire d'événements
@@ -271,6 +282,7 @@ class Serveur(threading.Thread):
 		localsock, localaddr = self.s.accept() # Attends la connection du client local
 		self.socket_list.append(localsock)
 		print("SERVEUR: Client local connecté")
+		self.running = True
 		while 1:
 			# prend une liste des socket prêt à être lu.
 			ready_to_read, ready_to_write, in_error = select.select(self.socket_list,self.socket_list,[])
@@ -306,8 +318,7 @@ class Serveur(threading.Thread):
 							sock.close()
 						print("SERVEUR: Client perdu")
 
-			if len(self.socket_list) < 1: # Cas où il ne reste plus qu'un seul socket, le notre.
-				print("SERVEUR: Fermeture, plus aucun client connecté")
+			if self.running == False: # Fermeture...
 				self.s.close()
 				return 0
 
@@ -333,10 +344,12 @@ class Client(threading.Thread):
 		while 1:
 			# Un message d'un client existant
 			data = self.server_sock.recv(size) # Reception des données...
-
 			if data:
 	                	# Des données sont arrivées
 				data = pickle.loads(data) # Décodage de ces données
+
+				if type(data) is str and data=="THE_END":
+					return 0
 
 				if data[0] not in self.id_list: # data[0] correspond à l'id du message
 					self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
@@ -356,7 +369,7 @@ class Client(threading.Thread):
 
 							elif data[1] == "DISCONNECT_BAD_PSEUDO":
 								self.update_StringVar_msg("Déconnection générale, mauvais pseudo.") # Affiche le message de déconnection
-								shutdown(True)
+								quit(forced=True)
 
 							elif type(data[1]) is list:
 								isNew, self.pseudo_list = diff_pseudo(data[1],self.pseudo_list)
