@@ -33,7 +33,7 @@ def sendMessage(msg, socket_list):
 	for sock in socket_list:
 		sock.send(pickle.dumps(msg)) # Envoi du message.
 
-def quit(fenetre="", forced=True):
+def quit(fenetre="", forced=False):
 	fenetre.destroy()
 	if forced == False:
 		sendTimedMessage("DISCONNECT","SYSTEM") # Envoi le message de déconnection
@@ -55,7 +55,7 @@ def diff_pseudo(liste1, liste2):
 	Compare et fusionne deux listes de pseudos
 	"""
 	nouv_liste=liste1
-	if set(liste1) == set(liste2): # Compare les deux listes, quelques soit leur ordre.
+	if liste1 == liste2: # Compare les deux listes, quelque soit leur ordre.
 		isNew=False
 
 	else:
@@ -122,8 +122,6 @@ def identification(client):
 	Authentification.geometry('410x170')
 	Authentification['bg']='bisque' # couleur de fond
 
-	Authentification.protocol("WM_DELETE_WINDOW",lambda: quit(Authentification)) # Utilise une fonction maison pour quitter
-
 	#Création de deux sous-fenêtres
 	Frame1 = Frame(Authentification,borderwidth=2,relief=GROOVE)
 	Frame1.pack(padx=10,pady=10)
@@ -141,14 +139,7 @@ def identification(client):
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5)
 
-	# Création d'un widget Label (texte 'Que souhaitez-vous faire?')
-	Label2 = Label(Frame2, text = 'Que souhaitez-vous faire?', fg = 'black', bg='lightgrey')
-	Label2.pack(pady=5)
-
-	Bouton1 = Button(Frame2, text = 'Rejoindre un serveur existant', command = lambda: choix_ip_et_destroy(Authentification)) #***********
-	Bouton1.pack(side=LEFT, padx = 5, pady=5)
-
-	Bouton2 = Button(Frame2, text = 'Créer un nouveau serveur', command = Authentification.destroy) #************
+	Bouton2 = Button(Frame2, text = 'Lancer engrenages!', command = Authentification.destroy) #************
 	Bouton2.pack(side=LEFT, padx = 5, pady=5)
 
 	# Lancement du gestionnaire d'événements
@@ -162,7 +153,6 @@ def connect_and_destroy(ip,fenetre,port=port_serveur):
 	"""
 	client.ConnectNewServer(ip, port)
 	fenetre.destroy()
-	raise SystemExit
 
 def choisir_ip():
 	Nouvelle_connection=Tk()
@@ -347,6 +337,7 @@ class Client(threading.Thread):
 			if data:
 	                	# Des données sont arrivées
 				data = pickle.loads(data) # Décodage de ces données
+				print(str(data))
 
 				if type(data) is str and data=="THE_END":
 					return 0
@@ -356,16 +347,19 @@ class Client(threading.Thread):
 
 					if data[3] == "": # Message non privé
 						self.update_StringVar_msg(data[2]+": "+data[1]) # Affiche le message
+						sendMessage(data, serveur.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 					else: #Il s'agit d'un message privé
 						if data[3] == self.pseudo: # Qui nous est destiné
 							self.update_StringVar_msg(data[2]+" vous chuchotte: "+data[1]) # Affiche le message
+							sendMessage(data, serveur.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 						elif data[3] == "SYSTEM": # Message système, reception d'un pseudo, ou d'une liste de pseudo
 							if data[1] == "DISCONNECT":
 								self.pseudo_list.remove(data[2])
 								self.update_StringVar_pseudo_list()
 								self.update_StringVar_msg(data[2]+" est déconnecté") # Affiche le message de connection
+								sendMessage(data, serveur.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 							elif data[1] == "DISCONNECT_BAD_PSEUDO":
 								self.update_StringVar_msg("Déconnection générale, mauvais pseudo.") # Affiche le message de déconnection
@@ -377,7 +371,6 @@ class Client(threading.Thread):
 									sendTimedMessage(self.pseudo_list,"SYSTEM")
 									self.update_StringVar_pseudo_list()
 
-					sendMessage(data, serveur.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 	def ConnectNewServer(self, ip, port=port_serveur):
 		"""
