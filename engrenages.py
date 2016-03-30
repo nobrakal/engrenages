@@ -85,31 +85,34 @@ def sendMPandDestroy(msg, pseudo,Message_prive ):
 	Message_prive.destroy()
 	
 def MP():
-	Message_prive=Tk()
-	Message_prive.title('Engrenages')
-	Message_prive.geometry('450x180')
-	Message_prive['bg']='bisque'
+	"""
+	Fonction ouvrant une fenêtre permettant d'envoyer un message privé à l'utilisateur choisi
+	"""
+	Message_prive=Tk() #définit Message_prive comme une fenêtre Tkinter
+	Message_prive.title('Engrenages') #titre de la fenêtre
+	Message_prive.geometry('450x180') #dimensions de la fenêtre
+	Message_prive['bg']='bisque' # couleur de fond
 
-	Frame1 = Frame(Message_prive,borderwidth=3,relief=GROOVE)
-	Frame1.pack(padx=10,pady=10)
+	MainFrame = Frame(Message_prive,borderwidth=3,relief=GROOVE) #crée la sous-fenêtre principale
+	MainFrame.pack(padx=10,pady=10) #instruction plaçant la sous-fenêtre principale dans la fenêtre
 	
-	Label1 = Label(Frame1, text = "Quel est le pseudo de l'utilisateur à qui vous souhaitez envoyer un message?", fg = 'black')
-	Label1.pack(padx=5,pady=5)
+	Label1 = Label(MainFrame, text = "Quel est le pseudo de l'utilisateur à qui vous souhaitez envoyer un message?", fg = 'black') # crée une zone de texte dans la sous-fenêtre principale
+	Label1.pack(padx=5,pady=5) #instruction plaçant la zone de texte dans la sous-fenêtre principale
 
-	Champ = Entry(Frame1, bg ='white', fg='grey')
-	Champ.focus_set()
-	Champ.pack(padx=5, pady=5)
+	ChoixPseudo = Entry(MainFrame, bg ='white', fg='grey') #crée une zone de saisie de texte par l'utilisateur
+	ChoixPseudo.focus_set()
+	ChoixPseudo.pack(padx=5, pady=5) #instruction plaçant la zone de saisie de texte dans la sous-fenêtre principale
 	
-	Label2 = Label(Frame1, text = "Quel est votre message?", fg = 'black')
-	Label2.pack(padx=5,pady=5)
+	Label2 = Label(MainFrame, text = "Quel est votre message?", fg = 'black') # crée une zone de texte dans la sous-fenêtre principale
+	Label2.pack(padx=5,pady=5) #instruction plaçant la zone de texte dans la sous-fenêtre principale
 	
-	Champ1 = Entry(Frame1, bg ='white', fg='grey')
-	Champ1.pack(padx=5, pady=5)
+	Message = Entry(MainFrame, bg ='white', fg='grey') #crée une zone de saisie de texte par l'utilisateur
+	Message.pack(padx=5, pady=5) #instruction plaçant la zone de saisie de texte dans la sous-fenêtre principale
 
-	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: sendMPandDestroy(Champ1.get(),Champ.get(),Message_prive))
-	Bouton1.pack(padx = 5, pady=5)
+	Bouton1 = Button(MainFrame, text = 'Valider', command = lambda: sendMPandDestroy(Message.get(),ChoixPseudo.get(),Message_prive)) #crée un bouton permettant de détruire la fenêtre
+	Bouton1.pack(padx = 5, pady=5) #instruction plaçant le bouton dans la sous-fenêtre principale
 
-	Message_prive.mainloop()
+	Message_prive.mainloop() #permet de signifier que le programme de création de la fenêtre est fini
 	
 def identification(rouage):
 	"""
