@@ -9,6 +9,7 @@ import time
 import argparse
 
 from tkinter import *
+from tkinter.messagebox import *
 
 port_serveur = 6666
 backlog = 10 # Nombre de connections maximum
@@ -113,6 +114,12 @@ def MP():
 	Bouton1.pack(padx = 5, pady=5) #instruction plaçant le bouton dans la sous-fenêtre principale
 
 	Message_prive.mainloop() #permet de signifier que le programme de création de la fenêtre est fini
+
+def check_pseudo(pseudo, fenetre):
+	if pseudo == "":
+		showwarning("Attention !", "Vous devez entrer un pseudo pour vous connecter !")
+	else:
+		fenetre.destroy()
 	
 def identification(rouage):
 	"""
@@ -136,12 +143,12 @@ def identification(rouage):
 	Label1.pack(padx=5,pady=5) #positionne le widget Label1
 
 	#crée le champ de saisie pour entrer le pseudo
-	Pseudo= StringVar()
-	Champ = Entry(Frame1, textvariable= Pseudo, bg ='white', fg='grey')
+	Pseudo = StringVar()
+	Champ = Entry(Frame1, textvariable= Pseudo,bg ='white', fg='grey')
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5)
 
-	Bouton2 = Button(Frame2, text = 'Lancer engrenages!', command = Authentification.destroy) #************
+	Bouton2 = Button(Frame2, text = 'Lancer engrenages!', command = lambda: check_pseudo(Champ.get(), Authentification)) #************
 	Bouton2.pack(side=LEFT, padx = 5, pady=5)
 
 	# Lancement du gestionnaire d'événements
@@ -393,8 +400,12 @@ rouage = Rouage()
 rouage.start()
 time.sleep(1)
 
+pseudo=""
+
 if args.serveur == None:
-	pseudo = identification(rouage)
+	while pseudo == "":
+		pseudo = identification(rouage)
+			
 else:
 	pseudo = args.serveur
 
