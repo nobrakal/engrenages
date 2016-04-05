@@ -88,8 +88,7 @@ def identification(rouage):
 	Go = Button(Frame2, text = 'Lancer engrenages!', command = lambda: check_pseudo(Champ.get(), Authentification)) #************
 	Go.pack(side=LEFT, padx = 5, pady=5)
 
-	# Lancement du gestionnaire d'événements
-	Authentification.mainloop()
+	Authentification.mainloop() #permet de signifier que le programme de création de la fenêtre est fini
 
 	return Pseudo.get()
 
@@ -131,7 +130,7 @@ def choisir_ip(rouage, port_serveur):
 	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: connect_and_destroy(Champ.get(),Nouvelle_connection,rouage, int(Port.get())))
 	Bouton1.pack(padx = 5, pady=5)
 
-	Nouvelle_connection.mainloop()
+	Nouvelle_connection.mainloop() #permet de signifier que le programme de création de la fenêtre est fini
 	
 def fenetre_princ(pseudo, rouage, port_serveur):
 	Engrenages = Tk()
@@ -196,5 +195,4 @@ def fenetre_princ(pseudo, rouage, port_serveur):
 	Bouton4 = Button(Frame7, text = 'Nouvelle connexion', command =lambda: choisir_ip(rouage, port_serveur) )
 	Bouton4.pack(padx=5,pady=5)
 
-	# Lancement du gestionnaire d'événements
-	Engrenages.mainloop()
+	Engrenages.mainloop() #permet de signifier que le programme de création de la fenêtre est fini
