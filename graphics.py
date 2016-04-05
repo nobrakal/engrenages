@@ -42,8 +42,11 @@ def MP(rouage):
 	Message_prive.mainloop() #permet de signifier que le programme de création de la fenêtre est fini
 
 def check_pseudo(pseudo, fenetre):
+	"""
+	Fonction vérifiant si le pseudo entré par l'utilisateur est valide (c'est-à-dire pas vide ni "DESTROY")
+	"""
 	if pseudo == "" or pseudo == "DESTROY" :
-		showwarning("Attention !", "Vous devez entrer un pseudo valable pour vous connecter !")
+		showwarning("Attention !", "Vous devez entrer un pseudo valide pour vous connecter !")
 	else:
 		fenetre.destroy()
 
@@ -74,7 +77,7 @@ def identification(rouage):
 	Frame2 = Frame(Authentification,borderwidth=2,relief=GROOVE)
 	Frame2.pack(padx=10,pady=10)
 
-	# Création d'un widget Label (texte 'Veuillez entrer votre Pseudo !')
+	# Création d'un widget Label affichant le texte: "Veuillez entrer votre Pseudo !"
 	Label1 = Label(Frame1, text = 'Veuillez entrer votre Pseudo', fg = 'black', bg='lightgrey')
 	Label1.pack(padx=5,pady=5) #positionne le widget Label1
 
@@ -82,8 +85,8 @@ def identification(rouage):
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5)
 
-	Bouton2 = Button(Frame2, text = 'Lancer engrenages!', command = lambda: check_pseudo(Champ.get(), Authentification)) #************
-	Bouton2.pack(side=LEFT, padx = 5, pady=5)
+	Go = Button(Frame2, text = 'Lancer engrenages!', command = lambda: check_pseudo(Champ.get(), Authentification)) #************
+	Go.pack(side=LEFT, padx = 5, pady=5)
 
 	# Lancement du gestionnaire d'événements
 	Authentification.mainloop()
@@ -98,10 +101,13 @@ def connect_and_destroy(ip,fenetre,rouage,port):
 	fenetre.destroy()
 
 def choisir_ip(rouage, port_serveur):
-	Nouvelle_connection=Tk()
-	Nouvelle_connection.title('Engrenages')
-	Nouvelle_connection.geometry('300x180')
-	Nouvelle_connection['bg']='bisque'
+	"""
+	Fonction qui ouvre une fenêtre de connexion à un autre serveur. Elle demande à l'utilisateur d'entrer l'adresse et le port du serveur à rejoindre.
+	"""
+	Nouvelle_connection=Tk() #définit Nouvelle_connection comme une fenêtre Tkinter...
+	Nouvelle_connection.title('Engrenages') #...de titre "Engrenages"...
+	Nouvelle_connection.geometry('300x180') #...de dimensions 300x180...
+	Nouvelle_connection['bg']='bisque' #...et de fond de couleur "bisque"
 
 	Frame1 = Frame(Nouvelle_connection,borderwidth=3,relief=GROOVE)
 	Frame1.pack(padx=10,pady=10)
@@ -130,7 +136,7 @@ def choisir_ip(rouage, port_serveur):
 def fenetre_princ(pseudo, rouage, port_serveur):
 	Engrenages = Tk()
 	Engrenages.title('Engrenages:'+ pseudo)
-	Engrenages.geometry('700x400')
+	Engrenages.geometry('770x420')
 	Engrenages['bg']='bisque' # couleur de fond
 
 	Engrenages.protocol("WM_DELETE_WINDOW",lambda: destroy_and_shutdown(rouage, Engrenages)) # Utilise une fonction maison pour quitter
@@ -138,7 +144,7 @@ def fenetre_princ(pseudo, rouage, port_serveur):
 	Frame1 = Frame(Engrenages,borderwidth=3,relief=GROOVE)
 	Frame1.pack(padx=10,pady=10)
 
-	Label1 = Label(Frame1, text = 'Engrenages', fg = 'black') # augmenter la taille!!
+	Label1 = Label(Frame1, text = 'Engrenages', fg = 'black')
 	Label1.pack(padx=5,pady=5)
 
 	Frame2 = LabelFrame(Engrenages,borderwidth=2,relief=GROOVE, bg="lightgrey", text="Messages précédents")
@@ -149,7 +155,7 @@ def fenetre_princ(pseudo, rouage, port_serveur):
 	Label3.pack(padx=5,pady=5, side=TOP)
 
 	Frame3 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
-	Frame3.place(x=550,y=75)
+	Frame3.place(x=600,y=75)
 
 	Label4 = Label(Frame3, text = 'Utilisateurs connectés', fg = 'black', bg="lightgrey")
 	Label4.pack(padx=5,pady=5, side=TOP)
@@ -173,19 +179,19 @@ def fenetre_princ(pseudo, rouage, port_serveur):
 	Bouton1.pack(padx=5,pady=5, side= LEFT)
 
 	Frame5 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
-	Frame5.place(x=575,y=360)
+	Frame5.place(x=635,y=370)
 
 	Bouton2 = Button(Frame5, text = 'Quitter', command =lambda: destroy_and_shutdown(rouage, Engrenages))
-	Bouton2.pack(padx=5,pady=5, side= LEFT)
+	Bouton2.pack(padx=5,pady=5)
 	
 	Frame6 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
-	Frame6.place(x=50,y=350)
+	Frame6.place(x=30,y=370)
 	
 	Bouton3 = Button(Frame6, text = 'Message Privé', command =lambda: MP(rouage) )
 	Bouton3.pack(padx=5,pady=5)
 	
 	Frame7 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
-	Frame7.place(x=550,y=310)
+	Frame7.place(x=600,y=320)
 	
 	Bouton4 = Button(Frame7, text = 'Nouvelle connexion', command =lambda: choisir_ip(rouage, port_serveur) )
 	Bouton4.pack(padx=5,pady=5)
