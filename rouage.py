@@ -47,7 +47,7 @@ class Rouage(threading.Thread):
 		self.backlog=backlog
 		self.size=size
 
-		self.running = False
+		self.running=False
 
 		self.socket_list = []
 		self.id_list=[]
@@ -67,10 +67,10 @@ class Rouage(threading.Thread):
 
 	def run(self):
 		"""Code à exécuter pendant l'exécution du rouage."""
-		self.running = True
-		while 1:
+		self.running=True
+		while self.running:
 			# prend une liste des socket prêt à être lu.
-			ready_to_read, ready_to_write, in_error = select.select(self.socket_list,self.socket_list,[])
+			ready_to_read, ready_to_write, in_error = select.select(self.socket_list,self.socket_list,[],0.1)
 			for sock in ready_to_read:
 				# Une nouvelle connection!
 				if sock == self.s:
@@ -84,10 +84,9 @@ class Rouage(threading.Thread):
 				# Un message d'un client existant
 				else:
 					# Reception des données...
-					data = sock.recv(size)
+					data = sock.recv(self.size)
 					if data:
 						data = pickle.loads(data) # Décodage de ces données
-
 						if data[0] not in self.id_list: # data[0] correspond à l'id du message
 							self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
 
@@ -116,6 +115,7 @@ class Rouage(threading.Thread):
 										if isNew:
 											self.sendTimedMessage(self.pseudo_list,"SYSTEM")
 											self.update_StringVar_pseudo_list()
+
 									elif data[1] == "NEW_CONN": # Message système, reception d'un nouveau pseudo
 										if data[2] in self.pseudo_list:
 											self.sendTimedMessage("DISCONNECT_BAD_PSEUDO","SYSTEM", [sock]) # déconnecte de force, le nouvel arrivé à déjà un pseudo existant.
@@ -131,10 +131,6 @@ class Rouage(threading.Thread):
 							self.socket_list.remove(sock)
 							sock.close()
 						print("Client perdu")
-
-			else: # Fermeture...
-				self.s.close()
-				return 0
 
 	def ConnectNewServer(self, ip, port):
 		"""
@@ -199,5 +195,4 @@ class Rouage(threading.Thread):
 			for sock in self.socket_list:
 				self.socket_list.remove(sock)
 				sock.close()
-			ysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			ysock.connect(("",self.port_serveur))# On se connecte à notre serveur, enclenche l'extinction générale
+			self.running=False
