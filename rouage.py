@@ -114,16 +114,16 @@ class Rouage(threading.Thread):
 									elif type(data[1]) is list:
 										isNew, self.pseudo_list = diff_pseudo(data[1],self.pseudo_list)
 										if isNew:
-											sendTimedMessage(self.pseudo_list,"SYSTEM")
+											self.sendTimedMessage(self.pseudo_list,"SYSTEM")
 											self.update_StringVar_pseudo_list()
 									elif data[1] == "NEW_CONN": # Message système, reception d'un nouveau pseudo
 										if data[2] in self.pseudo_list:
-											sendTimedMessage("DISCONNECT_BAD_PSEUDO","SYSTEM", [sock]) # déconnecte de force, le nouvel arrivé à déjà un pseudo existant.
+											self.sendTimedMessage("DISCONNECT_BAD_PSEUDO","SYSTEM", [sock]) # déconnecte de force, le nouvel arrivé à déjà un pseudo existant.
 										else:
 											self.pseudo_list.append(data[2])
 											self.update_StringVar_pseudo_list()
 											self.update_StringVar_msg(data[2]+" est maintenant connecté") # Affiche le message de connection
-											sendTimedMessage(self.pseudo_list,"SYSTEM") # Envoi à tout le monde sa liste, mise à jour.
+											self.sendTimedMessage(self.pseudo_list,"SYSTEM") # Envoi à tout le monde sa liste, mise à jour.
 
 					else:
 					# Il n'y a rien, le client est sans doute déconnecté
@@ -147,7 +147,7 @@ class Rouage(threading.Thread):
 			print("CLIENT: Connecté au serveur distant d'ip "+str(ip)+".")
 			self.socket_list.append(ysock) # On l'ajoute à la liste de socket
 
-			sendTimedMessage("NEW_CONN","SYSTEM",[ysock]) # Envoi son pseudo au serveur distant, pour vérification
+			self.sendTimedMessage("NEW_CONN","SYSTEM",[ysock]) # Envoi son pseudo au serveur distant, pour vérification
 		except Exception as e:
 				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port, e))
 
