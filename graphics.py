@@ -121,11 +121,9 @@ def choisir_ip(rouage, port_serveur):
 	Label2 = Label(Frame1, text = "Quel port souhaitez-vous utiliser?", fg = 'black')
 	Label2.pack(padx=5,pady=5)
 	
-	Port= StringVar()
-	Port.set(port_serveur)
-	Champ1 = Entry(Frame1, textvariable= Port, bg ='white', fg='grey')
-	Champ1.focus_set()
-	Champ1.pack(padx=5, pady=5)
+	Port = Entry(Frame1, bg ='white', fg='grey')
+	Port.focus_set()
+	Port.pack(padx=5, pady=5)
 
 	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: connect_and_destroy(Champ.get(),Nouvelle_connection,rouage, int(Port.get())))
 	Bouton1.pack(padx = 5, pady=5)
@@ -135,64 +133,48 @@ def choisir_ip(rouage, port_serveur):
 def fenetre_princ(pseudo, rouage, port_serveur):
 	Engrenages = Tk()
 	Engrenages.title('Engrenages:'+ pseudo)
-	Engrenages.geometry('770x420')
 	Engrenages['bg']='bisque' # couleur de fond
 
 	Engrenages.protocol("WM_DELETE_WINDOW",lambda: destroy_and_shutdown(rouage, Engrenages)) # Utilise une fonction maison pour quitter
 
-	Frame1 = Frame(Engrenages,borderwidth=3,relief=GROOVE)
-	Frame1.pack(padx=10,pady=10)
+	Label1 = Label(Engrenages, text = 'Engrenages', fg = 'black', justify='center', padx=5, pady=5)
+	Label1.grid(row=0,column=2)
 
-	Label1 = Label(Frame1, text = 'Engrenages', fg = 'black')
-	Label1.pack(padx=5,pady=5)
+	Label2 = Label(Engrenages, text = 'Messages précédents', fg = 'black', anchor=SE)
+	Label2.grid(row=0,column=0)
 
-	Frame2 = LabelFrame(Engrenages,borderwidth=2,relief=GROOVE, bg="lightgrey", text="Messages précédents")
-	Frame2.place(x=15,y=75)
+	rouage.msg_text = Text(Engrenages) # Affiche les messages précédents
+	rouage.msg_text.configure(state=DISABLED)
+	rouage.msg_text.grid(row=1,column=0, columnspan = 4, rowspan = 2, sticky = SE)
 
-	rouage.msg = StringVar()
-	Label3 = Label(Frame2, textvariable = rouage.msg, fg = 'black', bg="white",height=15,width=70) #affiche les messages précédents
-	Label3.pack(padx=5,pady=5, side=TOP)
+	FrameConnected = Frame()
+	FrameConnected.grid(row=0,column=4,rowspan = 2, sticky = S)
 
-	Frame3 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
-	Frame3.place(x=600,y=75)
-
-	Label4 = Label(Frame3, text = 'Utilisateurs connectés', fg = 'black', bg="lightgrey")
-	Label4.pack(padx=5,pady=5, side=TOP)
+	Label4 = Label(FrameConnected, text = 'Utilisateurs connectés', fg = 'black', bg="lightgrey")
+	Label4.pack(side=TOP,expand = 1,fill=BOTH)
 
 	rouage.StringVar_pseudo_list = StringVar(value=pseudo)
-	Label5 = Label(Frame3, textvariable = rouage.StringVar_pseudo_list, fg = 'black', bg="lightgrey") #liste des utilisateurs connectés
-	Label5.pack(padx=5,pady=5)
+	Label5 = Label(FrameConnected, textvariable = rouage.StringVar_pseudo_list, fg = 'black', bg="lightgrey", justify='left') #liste des utilisateurs connectés
+	Label5.pack(side=TOP)
 
-	Frame4 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
-	Frame4.pack(padx=10,pady=10, side=BOTTOM)
+	Bouton4 = Button(FrameConnected, text = 'Nouvelle connexion', command =lambda: choisir_ip(rouage, port_serveur) )
+	Bouton4.pack(side=TOP)
 
-	Label6 = Label(Frame4, text = 'Votre message:', fg = 'black', bg="lightgrey")
-	Label6.pack(padx=5,pady=5, side=LEFT)
+	Label6 = Label(Engrenages, text = 'Votre message:', fg = 'black', bg="lightgrey")
+	Label6.grid(row=3,column=1)
 
 	Message = StringVar()
-	Champ = Entry(Frame4, textvariable= Message, bg ='white', fg='grey')
+	Champ = Entry(Engrenages, textvariable= Message, bg ='white', fg='grey')
 	Champ.focus_set()
-	Champ.pack(padx=5, pady=5, side=LEFT)
+	Champ.grid(row=3,column=2)
 
-	Bouton1 = Button(Frame4, text = 'Envoyer', command = lambda: rouage.sendTimedMessage(Message.get()))  #Envoi un message
-	Bouton1.pack(padx=5,pady=5, side= LEFT)
+	Bouton1 = Button(Engrenages, text = 'Envoyer', command = lambda: rouage.sendTimedMessage(Message.get()))  #Envoi un message
+	Bouton1.grid(row=3,column=3)
 
-	Frame5 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
-	Frame5.place(x=635,y=370)
-
-	Bouton2 = Button(Frame5, text = 'Quitter', command =lambda: destroy_and_shutdown(rouage, Engrenages))
-	Bouton2.pack(padx=5,pady=5)
+	Bouton2 = Button(Engrenages, text = 'Quitter', command =lambda: destroy_and_shutdown(rouage, Engrenages))
+	Bouton2.grid(row=3,column=4)
 	
-	Frame6 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
-	Frame6.place(x=30,y=370)
-	
-	Bouton3 = Button(Frame6, text = 'Message Privé', command =lambda: MP(rouage) )
-	Bouton3.pack(padx=5,pady=5)
-	
-	Frame7 = Frame(Engrenages, borderwidth=2, relief=GROOVE, bg="lightgrey")
-	Frame7.place(x=600,y=320)
-	
-	Bouton4 = Button(Frame7, text = 'Nouvelle connexion', command =lambda: choisir_ip(rouage, port_serveur) )
-	Bouton4.pack(padx=5,pady=5)
+	Bouton3 = Button(Engrenages, text = 'Message Privé', command =lambda: MP(rouage) )
+	Bouton3.grid(row=3,column=0)
 
 	Engrenages.mainloop() #permet de signifier que le programme de création de la fenêtre est fini

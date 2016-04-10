@@ -53,7 +53,7 @@ class Rouage(threading.Thread):
 		self.id_list=[]
 		self.pseudo_list = [] # Ajoute notre pseudo à la liste des pseudos (précédé du nom du premier socket, le notre)
 
-		self.msg = None # Le type sera changé par fentere_princ()
+		self.msg_text = None # Le type sera changé par fentere_princ()
 		self.StringVar_pseudo_list = None
 
 		self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -76,9 +76,6 @@ class Rouage(threading.Thread):
 				if sock == self.s:
 					newsocket, addr = self.s.accept()
 					self.socket_list.append(newsocket)
-					if addr[0]=="127.0.0.1":
-						newsocket.shutdown(SHUT_RDWR)
-						return 0
 					print ("Client connecté, d'adresse: "+str(addr[0]))
 
 				# Un message d'un client existant
@@ -87,27 +84,28 @@ class Rouage(threading.Thread):
 					data = sock.recv(self.size)
 					if data:
 						data = pickle.loads(data) # Décodage de ces données
+						print(str(data))
 						if data[0] not in self.id_list: # data[0] correspond à l'id du message
 							self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
 
 							if data[3] == "": # Message non privé
-								self.update_StringVar_msg(data[2]+": "+data[1]) # Affiche le message
-								sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+								self.update_msg_text(data[2]+": "+data[1]) # Affiche le message
+								self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 							else: #Il s'agit d'un message privé
 								if data[3] == self.pseudo: # Qui nous est destiné
-									self.update_StringVar_msg(data[2]+" vous chuchotte: "+data[1]) # Affiche le message
-									sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+									self.update_msg_text(data[2]+" vous chuchotte: "+data[1]) # Affiche le message
+									self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 								elif data[3] == "SYSTEM": # Message système, reception d'un pseudo, ou d'une liste de pseudo
 									if data[1] == "DISCONNECT":
 										self.pseudo_list.remove(data[2])
 										self.update_StringVar_pseudo_list()
-										self.update_StringVar_msg(data[2]+" est déconnecté") # Affiche le message de connection
-										sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+										self.update_msg_text(data[2]+" est déconnecté") # Affiche le message de connection
+										self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 									elif data[1] == "DISCONNECT_BAD_PSEUDO":
-										self.update_StringVar_msg("Déconnection générale, mauvais pseudo.") # Affiche le message de déconnection
+										self.update_msg_text("Déconnection générale, mauvais pseudo.") # Affiche le message de déconnection
 										self.quit(forced=True)
 
 									elif type(data[1]) is list:
@@ -122,7 +120,7 @@ class Rouage(threading.Thread):
 										else:
 											self.pseudo_list.append(data[2])
 											self.update_StringVar_pseudo_list()
-											self.update_StringVar_msg(data[2]+" est maintenant connecté") # Affiche le message de connection
+											self.update_msg_text(data[2]+" est maintenant connecté") # Affiche le message de connection
 											self.sendTimedMessage(self.pseudo_list,"SYSTEM") # Envoi à tout le monde sa liste, mise à jour.
 
 					else:
@@ -155,9 +153,9 @@ class Rouage(threading.Thread):
 		time = str(datetime.datetime.now())
 		self.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
 		if destinataire == "":
-			self.update_StringVar_msg(self.pseudo+": "+msg) # Affiche le message
+			self.update_msg_text(self.pseudo+": "+msg) # Affiche le message
 		elif destinataire != "" and destinataire != "SYSTEM": # N'affiche pas messages privés
-			self.update_StringVar_msg("Vous chuchotez à "+destinataire+": "+msg) # Affiche le message
+			self.update_msg_text("Vous chuchotez à "+destinataire+": "+msg) # Affiche le message
 		for sock in socket_list:
 			sock.send(pickle.dumps([time,msg,self.pseudo,destinataire])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
 
@@ -178,15 +176,16 @@ class Rouage(threading.Thread):
 				j += i+"\n"
 			self.StringVar_pseudo_list.set(j) # Affiche la liste de pseudos
 
-	def update_StringVar_msg(self, new_message):
+	def update_msg_text(self, new_message):
 		"""
 		Met à jour la liste des messages. Prend en argument new_message, un string.
 		"""
-		while isinstance(self.msg,StringVar) == False: # Attends l'initialisation de la fenêtre graphique
+		while isinstance(self.msg_text,Text) == False: # Attends l'initialisation de la fenêtre graphique
 			pass
-		if isinstance(self.msg,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
-			messages_prec=self.msg.get()
-			self.msg.set(messages_prec+new_message+"\n")
+		if isinstance(self.msg_text,Text): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
+			self.msg_text.config(state=NORMAL)
+			self.msg_text.insert(END,new_message+"\n")
+			self.msg_text.config(state=DISABLED)
 
 	def quit(self, forced=False):
 		if forced == False:
