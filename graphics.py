@@ -143,12 +143,20 @@ def fenetre_princ(pseudo, rouage, port_serveur):
 	Label2 = Label(Engrenages, text = 'Messages précédents', fg = 'black', anchor=SE)
 	Label2.grid(row=0,column=0)
 
-	rouage.msg_text = Text(Engrenages) # Affiche les messages précédents
+	FrameMessages=Frame()
+	FrameMessages.grid(row=1,column=0, columnspan = 4, rowspan = 2, sticky = SE)
+
+	scrollbary = Scrollbar(FrameMessages)
+	scrollbary.grid(row=0, column=1)
+
+	rouage.msg_text = Text(FrameMessages,yscrollcommand=scrollbary.set) # Affiche les messages précédents
 	rouage.msg_text.configure(state=DISABLED)
-	rouage.msg_text.grid(row=1,column=0, columnspan = 4, rowspan = 2, sticky = SE)
+	rouage.msg_text.grid(row=0,column=0)
+
+	scrollbary.config(command=rouage.msg_text.yview)
 
 	FrameConnected = Frame()
-	FrameConnected.grid(row=0,column=4,rowspan = 2, sticky = S)
+	FrameConnected.grid(row=0,column=5,rowspan = 2, sticky = S)
 
 	Label4 = Label(FrameConnected, text = 'Utilisateurs connectés', fg = 'black', bg="lightgrey")
 	Label4.pack(side=TOP,expand = 1,fill=BOTH)
