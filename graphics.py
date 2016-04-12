@@ -62,7 +62,6 @@ def identification(rouage):
 	Authentification = Tk()
 	# Création de la fenêtre principale
 	Authentification.title('Engrenages')
-	Authentification.geometry('410x170')
 	Authentification['bg']='bisque' # couleur de fond
 
 	#crée le champ de saisie pour entrer le pseudo
@@ -105,7 +104,6 @@ def choisir_ip(rouage, port_serveur):
 	"""
 	Nouvelle_connection=Tk() #définit Nouvelle_connection comme une fenêtre Tkinter...
 	Nouvelle_connection.title('Engrenages') #...de titre "Engrenages"...
-	Nouvelle_connection.geometry('300x180') #...de dimensions 300x180...
 	Nouvelle_connection['bg']='bisque' #...et de fond de couleur "bisque"
 
 	Frame1 = Frame(Nouvelle_connection,borderwidth=3,relief=GROOVE)
