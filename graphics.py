@@ -138,12 +138,9 @@ def fenetre_princ(pseudo, rouage, port_serveur):
 	Engrenages.protocol("WM_DELETE_WINDOW",lambda: destroy_and_shutdown(rouage, Engrenages)) # Utilise une fonction maison pour quitter
 
 	Label1 = Label(Engrenages, text = 'Engrenages', fg = 'black', justify='center', padx=5, pady=5)
-	Label1.grid(row=0,column=2)
+	Label1.grid(row=0,column=1, padx=5, pady=5)
 
-	Label2 = Label(Engrenages, text = 'Messages précédents', fg = 'black', anchor=SE)
-	Label2.grid(row=0,column=0)
-
-	FrameMessages=Frame()
+	FrameMessages=LabelFrame(text="Messages précédents")
 	FrameMessages.grid(row=1,column=0, columnspan = 4, rowspan = 2, sticky = SE)
 
 	scrollbary = Scrollbar(FrameMessages)
@@ -155,32 +152,35 @@ def fenetre_princ(pseudo, rouage, port_serveur):
 
 	scrollbary.config(command=rouage.msg_text.yview)
 
-	FrameConnected = Frame()
-	FrameConnected.grid(row=0,column=5,rowspan = 2, sticky = S)
-
-	Label4 = Label(FrameConnected, text = 'Utilisateurs connectés', fg = 'black', bg="lightgrey")
-	Label4.pack(side=TOP,expand = 1,fill=BOTH)
+	FrameConnected = LabelFrame(bg='white', text="Utilisateurs connectés")
+	FrameConnected.grid(row=1,column=4,rowspan = 2, sticky = S, padx=5, pady=5)
+	
+	Framedisconnect = Frame(bg='lightgrey')
+	Framedisconnect.grid(row=3, column=4, padx=5, pady=5)
 
 	rouage.StringVar_pseudo_list = StringVar(value=pseudo)
-	Label5 = Label(FrameConnected, textvariable = rouage.StringVar_pseudo_list, fg = 'black', bg="lightgrey", justify='left') #liste des utilisateurs connectés
-	Label5.pack(side=TOP)
+	Label5 = Label(FrameConnected, textvariable = rouage.StringVar_pseudo_list, fg = 'black', bg="white", justify='left', height=23) #liste des utilisateurs connectés
+	Label5.pack()
 
 	Bouton4 = Button(FrameConnected, text = 'Nouvelle connexion', command =lambda: choisir_ip(rouage, port_serveur) )
-	Bouton4.pack(side=TOP)
-
-	Label6 = Label(Engrenages, text = 'Votre message:', fg = 'black', bg="lightgrey")
-	Label6.grid(row=3,column=1)
+	Bouton4.pack(padx=5, pady=5)
+	
+	Framenewmessage = Frame(bg='lightgrey')
+	Framenewmessage.grid(row=3, column=1, padx=5,pady=5)
+	
+	Label6 = Label(Framenewmessage, text = 'Votre message:', fg = 'black', bg="lightgrey")
+	Label6.grid(padx=5,pady=5, row=0, column=0)
 
 	Message = StringVar()
-	Champ = Entry(Engrenages, textvariable= Message, bg ='white', fg='grey')
+	Champ = Entry(Framenewmessage, textvariable= Message, bg ='white', fg='grey')
 	Champ.focus_set()
-	Champ.grid(row=3,column=2)
+	Champ.grid(padx=5,pady=5, row=0, column=1)
 
-	Bouton1 = Button(Engrenages, text = 'Envoyer', command = lambda: rouage.sendTimedMessage(Message.get()))  #Envoi un message
-	Bouton1.grid(row=3,column=3)
+	Bouton1 = Button(Framenewmessage, text = 'Envoyer', command = lambda: rouage.sendTimedMessage(Message.get()))  #Envoi un message
+	Bouton1.grid(padx=5,pady=5, row=0, column=2)
 
-	Bouton2 = Button(Engrenages, text = 'Quitter', command =lambda: destroy_and_shutdown(rouage, Engrenages))
-	Bouton2.grid(row=3,column=4)
+	Bouton2 = Button(Framedisconnect, text = 'Quitter', command =lambda: destroy_and_shutdown(rouage, Engrenages))
+	Bouton2.pack(padx=5, pady=5)
 	
 	Bouton3 = Button(Engrenages, text = 'Message Privé', command =lambda: MP(rouage) )
 	Bouton3.grid(row=3,column=0)
