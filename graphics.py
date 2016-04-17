@@ -4,8 +4,15 @@ from tkinter import *
 from tkinter.messagebox import *
 
 def sendMPandDestroy(msg, pseudo, fenetre, rouage ):
-	rouage.sendTimedMessage(msg,pseudo)
-	fenetre.destroy()
+	if pseudo == "":
+		showwarning("Attention !", "Vous ne pouvez pas entrer un pseudo vide")
+	elif msg == "":
+		showwarning("Attention !", "Vous ne pouvez pas entrer de message vide")
+	elif pseudo == "SYSTEM":
+		showwarning("Attention !", "L'envoi de message au système est prohibé")
+	else:
+		rouage.sendTimedMessage(msg,pseudo)
+		fenetre.destroy()
 
 def destroy_and_shutdown(rouage, fenetre):
 	fenetre.destroy()
@@ -45,15 +52,10 @@ def check_pseudo(pseudo, fenetre):
 	"""
 	Fonction vérifiant si le pseudo entré par l'utilisateur est valide (c'est-à-dire pas vide ni "DESTROY")
 	"""
-	if pseudo == "" or pseudo == "DESTROY" :
+	if pseudo == "":
 		showwarning("Attention !", "Vous devez entrer un pseudo valide pour vous connecter !")
 	else:
 		fenetre.destroy()
-
-def pre_shutdown(rouage,fenetre, Pseudo):
-	Pseudo.set("DESTROY")
-	fenetre.destroy()
-	rouage.quit()
 
 def identification(rouage):
 	"""
@@ -67,7 +69,7 @@ def identification(rouage):
 	#crée le champ de saisie pour entrer le pseudo
 	Pseudo = StringVar()
 
-	Authentification.protocol("WM_DELETE_WINDOW",lambda: pre_shutdown(rouage, Authentification, Pseudo)) # Utilise une fonction maison pour quitter
+	Authentification.protocol("WM_DELETE_WINDOW",lambda: destroy_and_shutdown(rouage, Authentification)) # Utilise une fonction maison pour quitter
 
 	#Création de deux sous-fenêtres
 	Frame1 = Frame(Authentification,borderwidth=2,relief=GROOVE)
@@ -95,8 +97,13 @@ def connect_and_destroy(ip,fenetre,rouage,port):
 	"""
 	Fonction écran permettant d'éxécuter deux sous fonctions pour un seul boutton.
 	"""
-	rouage.ConnectNewServer(ip, port)
-	fenetre.destroy()
+	if ip == "":
+		showwarning("Attention !", "Vous ne pouvez pas vous connecter à une ip vide")
+	elif port == "":
+		showwarning("Attention !", "Vous ne pouvez pas vous connecter sur un port vide")
+	else:
+		rouage.ConnectNewServer(ip, int(port))
+		fenetre.destroy()
 
 def choisir_ip(rouage, port_serveur):
 	"""
@@ -123,7 +130,7 @@ def choisir_ip(rouage, port_serveur):
 	Port.focus_set()
 	Port.pack(padx=5, pady=5)
 
-	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: connect_and_destroy(Champ.get(),Nouvelle_connection,rouage, int(Port.get())))
+	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: connect_and_destroy(Champ.get(),Nouvelle_connection,rouage, Port.get()))
 	Bouton1.pack(padx = 5, pady=5)
 
 	Nouvelle_connection.mainloop() #permet de signifier que le programme de création de la fenêtre est fini
