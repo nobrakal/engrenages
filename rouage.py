@@ -106,10 +106,16 @@ class Rouage(threading.Thread):
 
 									elif type(data[1]) is list:
 										if data[1][0] == "DISCONNECT":
-											for x in data[1][1:]:
-												self.pseudo_list.remove(x)
+											if data[4] == 1: # un client directement connecté
+												self.socket_list.remove(sock)
+												sock.close
+											print(str(data[1][1]))
+											for x in data[1][1]:
+												if x != self.pseudo:
+													self.pseudo_list.remove(x)
+													self.update_msg_text(x+" est maintenant déconnecté") # Affiche le message de connection
+											self.local_pseudo_list.remove(data[2])
 											self.update_StringVar_pseudo_list()
-											self.update_msg_text(data[2]+" est déconnecté") # Affiche le message de connection
 											self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 										else:
@@ -122,11 +128,13 @@ class Rouage(threading.Thread):
 										if data[2] in self.pseudo_list:
 											self.sendTimedMessage("DISCONNECT_BAD_PSEUDO","SYSTEM", [sock]) # déconnecte de force, le nouvel arrivé à déjà un pseudo existant.
 										else:
-											self.local_pseudo_list.append(data[2])
 											self.pseudo_list.append(data[2])
 											self.update_StringVar_pseudo_list()
 											self.update_msg_text(data[2]+" est maintenant connecté") # Affiche le message de connection
 											self.sendTimedMessage(self.pseudo_list,"SYSTEM") # Envoi à tout le monde sa liste, mise à jour.
+
+									if data[4] == 1 and data[2] not in self.local_pseudo_list: # Si le message viens d'un client local, et que l'on ne le connait pas, on l'ajoute.
+										self.local_pseudo_list.append(data[2])
 
 								else: # Les message n'est pas pour nous, on fait tourner
 									self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
@@ -165,10 +173,11 @@ class Rouage(threading.Thread):
 		elif destinataire != "" and destinataire != "SYSTEM": # N'affiche pas messages privés
 			self.update_msg_text("Vous chuchotez à "+destinataire+": "+msg) # Affiche le message
 		for sock in socket_list:
-			sock.send(pickle.dumps([time,msg,self.pseudo,destinataire])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
+			sock.send(pickle.dumps([time,msg,self.pseudo,destinataire,1])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
 
 	def sendMessage(self, msg, socket_list):
 		"""Envoi un message à la liste de socket"""
+		msg[4] += 1 # Incrémente l'éloignement
 		for sock in socket_list:
 			sock.send(pickle.dumps(msg)) # Envoi du message.
 
@@ -197,7 +206,7 @@ class Rouage(threading.Thread):
 
 	def quit(self, forced=False):
 		if forced == False:
-			self.sendTimedMessage(["DISCONNECT", [self.pseudo, self.local_pseudo_list]],"SYSTEM") # Envoi le message de déconnection
+			self.sendTimedMessage(["DISCONNECT", [self.pseudo] + self.local_pseudo_list],"SYSTEM") # Envoi le message de déconnection
 			print("Fermeture...")
 			for sock in self.socket_list:
 				self.socket_list.remove(sock)
