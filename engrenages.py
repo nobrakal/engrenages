@@ -31,11 +31,10 @@ if args.pseudo == None:
 else:
 	pseudo = args.pseudo
 
-if pseudo != "DESTROY":
-	rouage.pseudo = pseudo
-	rouage.pseudo_list.append(pseudo)
+rouage.pseudo = pseudo
+rouage.pseudo_list.append(pseudo)
 
-	fenetre_princ(pseudo, rouage, int(args.port)) #Fenêtre principale
+fenetre_princ(pseudo, rouage, int(args.port)) #Fenêtre principale
 
 rouage.join()
 print("See you soon")
