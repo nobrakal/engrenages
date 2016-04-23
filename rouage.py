@@ -208,7 +208,7 @@ class Rouage(threading.Thread):
 		if forced == False:
 			self.sendTimedMessage(["DISCONNECT", [self.pseudo] + self.local_pseudo_list],"SYSTEM") # Envoi le message de déconnection
 			print("Fermeture...")
+			self.running=False
 			for sock in self.socket_list:
 				self.socket_list.remove(sock)
 				sock.close()
-			self.running=False
