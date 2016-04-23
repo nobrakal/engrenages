@@ -3,7 +3,7 @@
 from tkinter import *
 from tkinter.messagebox import *
 
-def sendMPandDestroy(msg, pseudo, fenetre, rouage ):
+def sendMPandDestroy(msg, pseudo, fenetre, rouage):
 	if pseudo == "":
 		showwarning("Attention !", "Vous ne pouvez pas entrer un pseudo vide")
 	elif msg == "":
@@ -14,7 +14,7 @@ def sendMPandDestroy(msg, pseudo, fenetre, rouage ):
 		rouage.sendTimedMessage(msg,pseudo)
 		fenetre.destroy()
 
-def destroy_and_shutdown(rouage, fenetre):
+def destroy_and_quit(fenetre, rouage):
 	fenetre.destroy()
 	rouage.quit()
 
@@ -69,7 +69,7 @@ def identification(rouage):
 	#crée le champ de saisie pour entrer le pseudo
 	Pseudo = StringVar()
 
-	Authentification.protocol("WM_DELETE_WINDOW",lambda: destroy_and_shutdown(rouage, Authentification)) # Utilise une fonction maison pour quitter
+	Authentification.protocol("WM_DELETE_WINDOW",lambda: destroy_and_quit(Authentification, rouage)) # Utilise une fonction maison pour quitter
 
 	#Création de deux sous-fenêtres
 	Frame1 = Frame(Authentification,borderwidth=2,relief=GROOVE)
@@ -93,7 +93,7 @@ def identification(rouage):
 
 	return Pseudo.get()
 
-def connect_and_destroy(ip,fenetre,rouage,port):
+def connect_and_destroy(ip,port,fenetre,rouage):
 	"""
 	Fonction écran permettant d'éxécuter deux sous fonctions pour un seul boutton.
 	"""
@@ -130,7 +130,7 @@ def choisir_ip(rouage, port_serveur):
 	Port.focus_set()
 	Port.pack(padx=5, pady=5)
 
-	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: connect_and_destroy(Champ.get(),Nouvelle_connection,rouage, Port.get()))
+	Bouton1 = Button(Frame1, text = 'Valider', command = lambda: connect_and_destroy(Champ.get(),Port.get(),Nouvelle_connection,rouage))
 	Bouton1.pack(padx = 5, pady=5)
 
 	Nouvelle_connection.mainloop() #permet de signifier que le programme de création de la fenêtre est fini
@@ -140,7 +140,7 @@ def fenetre_princ(pseudo, rouage, port_serveur):
 	Engrenages.title('Engrenages:'+ pseudo)
 	Engrenages['bg']='bisque' # couleur de fond
 
-	Engrenages.protocol("WM_DELETE_WINDOW",lambda: destroy_and_shutdown(rouage, Engrenages)) # Utilise une fonction maison pour quitter
+	Engrenages.protocol("WM_DELETE_WINDOW",lambda: destroy_and_quit(Engrenages, rouage)) # Utilise une fonction maison pour quitter
 
 	Label1 = Label(Engrenages, text = 'Engrenages', fg = 'black', justify='center', padx=5, pady=5)
 	Label1.grid(row=0,column=1, padx=5, pady=5)
@@ -184,7 +184,7 @@ def fenetre_princ(pseudo, rouage, port_serveur):
 	Bouton1 = Button(Framenewmessage, text = 'Envoyer', command = lambda: rouage.sendTimedMessage(Message.get()))  #Envoi un message
 	Bouton1.grid(padx=5,pady=5, row=0, column=2)
 
-	Bouton2 = Button(Framedisconnect, text = 'Quitter', command =lambda: destroy_and_shutdown(rouage, Engrenages))
+	Bouton2 = Button(Framedisconnect, text = 'Quitter', command =lambda: destroy_and_quit(Engrenages,rouage))
 	Bouton2.pack(padx=5, pady=5)
 	
 	Bouton3 = Button(Engrenages, text = 'Message Privé', command =lambda: MP(rouage) )
