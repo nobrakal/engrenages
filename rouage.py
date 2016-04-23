@@ -161,11 +161,9 @@ class Rouage(threading.Thread):
 		except Exception as e:
 				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port, e))
 
-	def sendTimedMessage(self, msg, destinataire="",socket_list="DEFAULT"):
+	def sendTimedMessage(self, msg, destinataire="",socket_list=self.socket_list[1:]):
 		"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste. Si destinataire est défini, le message ne sera lu que par la personne
 		portant le pseudo mis dans destinataire"""
-		if socket_list=="DEFAULT":
-			socket_list=self.socket_list[1:]
 		time = str(datetime.datetime.now())
 		self.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
 		if destinataire == "":
@@ -204,11 +202,10 @@ class Rouage(threading.Thread):
 			self.msg_text.insert(END,new_message+"\n")
 			self.msg_text.config(state=DISABLED)
 
-	def quit(self, forced=False):
-		if forced == False:
-			self.sendTimedMessage(["DISCONNECT", [self.pseudo] + self.local_pseudo_list],"SYSTEM") # Envoi le message de déconnection
-			print("Fermeture...")
-			self.running=False
-			for sock in self.socket_list:
-				self.socket_list.remove(sock)
-				sock.close()
+	def quit(self):
+		self.sendTimedMessage(["DISCONNECT", [self.pseudo] + self.local_pseudo_list],"SYSTEM") # Envoi le message de déconnection
+		print("Fermeture...")
+		self.running=False
+		for sock in self.socket_list:
+			self.socket_list.remove(sock)
+			sock.close()
