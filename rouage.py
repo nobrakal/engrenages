@@ -77,7 +77,7 @@ class Rouage(threading.Thread):
 				if sock == self.s:
 					newsocket, addr = self.s.accept()
 					self.socket_list.append(newsocket)
-					print ("Client connecté, d'adresse: "+str(addr[0]))
+					print("Client connecté, d'adresse: "+str(addr[0]))
 
 				# Un message d'un client existant
 				else:
@@ -102,7 +102,7 @@ class Rouage(threading.Thread):
 
 									if data[1] == "DISCONNECT_BAD_PSEUDO":
 										self.update_msg_text("Déconnection générale, mauvais pseudo.") # Affiche le message de déconnection
-										self.quit(forced=True)
+										self.quit()
 
 									elif type(data[1]) is list:
 										if data[1][0] == "DISCONNECT":
@@ -118,20 +118,24 @@ class Rouage(threading.Thread):
 											self.update_StringVar_pseudo_list()
 											self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
-										else:
+										elif data[1][0] == "NEW_CONN": # Message système, reception d'un nouveau pseudo
+											isNew, diff = diff_pseudo(data[1][1],self.pseudo_list)
+											if isNew == True: # L'utilisateur n'est pas encore connecté au réseau
+												if data[2] not in self.pseudo_list:
+													self.pseudo_list.append(data[2])
+													self.update_StringVar_pseudo_list()
+													self.update_msg_text(data[2]+" est maintenant connecté") # Affiche le message de connection
+													self.sendTimedMessage(self.pseudo_list,"SYSTEM") # Envoi à tout le monde sa liste, mise à jour.
+												else:
+													self.sendTimedMessage("DISCONNECT_BAD_PSEUDO","SYSTEM", [sock]) # déconnecte de force, le nouvel arrivé à déjà un pseudo existant.
+											else:
+													self.update_msg_text(data[2]+" est maintenant directement connecté, le réseau est plus fort !") # Affiche le message de connection
+
+										else: # Récéption d'une liste de pseudo unique
 											isNew, self.pseudo_list = diff_pseudo(data[1],self.pseudo_list)
 											if isNew:
 												self.sendTimedMessage(self.pseudo_list,"SYSTEM")
 											self.update_StringVar_pseudo_list()
-
-									elif data[1] == "NEW_CONN": # Message système, reception d'un nouveau pseudo
-										if data[2] in self.pseudo_list:
-											self.sendTimedMessage("DISCONNECT_BAD_PSEUDO","SYSTEM", [sock]) # déconnecte de force, le nouvel arrivé à déjà un pseudo existant.
-										else:
-											self.pseudo_list.append(data[2])
-											self.update_StringVar_pseudo_list()
-											self.update_msg_text(data[2]+" est maintenant connecté") # Affiche le message de connection
-											self.sendTimedMessage(self.pseudo_list,"SYSTEM") # Envoi à tout le monde sa liste, mise à jour.
 
 									if data[4] == 1 and data[2] not in self.local_pseudo_list: # Si le message viens d'un client local, et que l'on ne le connait pas, on l'ajoute.
 										self.local_pseudo_list.append(data[2])
@@ -154,16 +158,19 @@ class Rouage(threading.Thread):
 		ysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		try:
 			ysock.connect((ip,port))# On se connecte au nouveau serveur.
-			print("CLIENT: Connecté au serveur distant d'ip "+str(ip)+".")
+			self.update_msg_text("Connecté au serveur distant d'ip "+str(ip)+".")
 			self.socket_list.append(ysock) # On l'ajoute à la liste de socket
 
-			self.sendTimedMessage("NEW_CONN","SYSTEM",[ysock]) # Envoi son pseudo au serveur distant, pour vérification
+			self.sendTimedMessage(["NEW_CONN",self.pseudo_list],"SYSTEM",[ysock]) # Envoi son pseudo au serveur distant, pour vérification
 		except Exception as e:
 				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port, e))
 
-	def sendTimedMessage(self, msg, destinataire="",socket_list=self.socket_list[1:]):
+	def sendTimedMessage(self, msg, destinataire="",socket_list="DEFAULT"):
 		"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste. Si destinataire est défini, le message ne sera lu que par la personne
 		portant le pseudo mis dans destinataire"""
+		print(str(msg))
+		if socket_list == "DEFAULT":
+			socket_list = self.socket_list[1:]
 		time = str(datetime.datetime.now())
 		self.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
 		if destinataire == "":
