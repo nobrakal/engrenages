@@ -4,7 +4,6 @@ import socket
 import select
 import threading
 import pickle
-import time
 import argparse
 
 from rouage import *
@@ -20,14 +19,13 @@ if args.port == None:
 
 rouage = Rouage(int(args.port), 10, 1024)
 rouage.start()
-time.sleep(1)
 
 pseudo=""
 
 if args.pseudo == None:
 	while pseudo == "":
 		pseudo = identification(rouage)
-			
+
 else:
 	pseudo = args.pseudo
 

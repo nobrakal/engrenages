@@ -5,6 +5,7 @@ import select
 import threading
 import pickle
 import datetime
+from random import randint
 
 from tkinter import *
 
@@ -89,6 +90,9 @@ class Rouage(threading.Thread):
 						if data[0] not in self.id_list: # data[0] correspond à l'id du message
 							self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
 
+							if data[4] == 1 and data[2] not in self.local_pseudo_list: # Si le message viens d'un client local, et que l'on ne le connait pas, on l'ajoute.
+								self.local_pseudo_list.append(data[2])
+
 							if data[3] == "": # Message non privé
 								self.update_msg_text(data[2]+": "+data[1]) # Affiche le message
 								self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
@@ -102,20 +106,34 @@ class Rouage(threading.Thread):
 
 									if data[1] == "DISCONNECT_BAD_PSEUDO":
 										self.update_msg_text("Déconnection générale, mauvais pseudo.") # Affiche le message de déconnection
-										self.quit()
+										self.quit(forced=True)
 
 									elif type(data[1]) is list:
 										if data[1][0] == "DISCONNECT":
+											self.update_msg_text(data[2]+" est déconnecté") # Affiche le message de déconnection
+											self.pseudo_list.remove(data[2])
 											if data[4] == 1: # un client directement connecté
 												self.socket_list.remove(sock)
 												sock.close
-											print(str(data[1][1]))
-											for x in data[1][1]:
-												if x != self.pseudo:
+												self.local_pseudo_list.remove(data[2])
+												for x in data[1][1]: # On vérifie la présence de tous les anciens connectés
+													if x != self.pseudo and x not in self.local_pseudo_list:
+														self.sendTimedMessage(["IS_ALIVE",x,False],"SYSTEM")
+											for x in data[1][1]: # On vérifie la présence de tous les anciens connectés
+												if x != self.pseudo and x not in self.local_pseudo_list:
 													self.pseudo_list.remove(x)
-													self.update_msg_text(x+" est maintenant déconnecté") # Affiche le message de connection
-											self.local_pseudo_list.remove(data[2])
+													self.sendTimedMessage(["IS_ALIVE",x,False],"SYSTEM")
+													self.update_msg_text(x+" semble être déconnecté...") # Affiche le message de connection.
 											self.update_StringVar_pseudo_list()
+											self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+
+										elif data[1][0] == "IS_ALIVE":
+											if data[1][1] == self.pseudo:
+												self.sendTimedMessage(["IS_ALIVE",self.pseudo,True],"SYSTEM")
+											elif data[1][2] == True and data[1][1] not in self.pseudo_list:
+												self.pseudo_list.append(data[1][1])
+												self.update_StringVar_pseudo_list()
+												self.update_msg_text(str(data[1][1])+" est bien connecté au réseau") # Affiche le message de connection.
 											self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 										elif data[1][0] == "NEW_CONN": # Message système, reception d'un nouveau pseudo
@@ -130,15 +148,13 @@ class Rouage(threading.Thread):
 													self.sendTimedMessage("DISCONNECT_BAD_PSEUDO","SYSTEM", [sock]) # déconnecte de force, le nouvel arrivé à déjà un pseudo existant.
 											else:
 													self.update_msg_text(data[2]+" est maintenant directement connecté, le réseau est plus fort !") # Affiche le message de connection
+													self.sendTimedMessage("Hi","SYSTEM",[sock])# Permet à sock de nous ajouter à sa liste de directement connectés.
 
 										else: # Récéption d'une liste de pseudo unique
 											isNew, self.pseudo_list = diff_pseudo(data[1],self.pseudo_list)
 											if isNew:
 												self.sendTimedMessage(self.pseudo_list,"SYSTEM")
 											self.update_StringVar_pseudo_list()
-
-									if data[4] == 1 and data[2] not in self.local_pseudo_list: # Si le message viens d'un client local, et que l'on ne le connait pas, on l'ajoute.
-										self.local_pseudo_list.append(data[2])
 
 								else: # Les message n'est pas pour nous, on fait tourner
 									self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
@@ -171,7 +187,7 @@ class Rouage(threading.Thread):
 		print(str(msg))
 		if socket_list == "DEFAULT":
 			socket_list = self.socket_list[1:]
-		time = str(datetime.datetime.now())
+		time = str(datetime.datetime.now())+str(randint(10,99))
 		self.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
 		if destinataire == "":
 			self.update_msg_text(self.pseudo+": "+msg) # Affiche le message
@@ -209,8 +225,9 @@ class Rouage(threading.Thread):
 			self.msg_text.insert(END,new_message+"\n")
 			self.msg_text.config(state=DISABLED)
 
-	def quit(self):
-		self.sendTimedMessage(["DISCONNECT", [self.pseudo] + self.local_pseudo_list],"SYSTEM") # Envoi le message de déconnection
+	def quit(self, forced=False):
+		if forced != True:
+			self.sendTimedMessage(["DISCONNECT",self.local_pseudo_list],"SYSTEM") # Envoi le message de déconnection
 		print("Fermeture...")
 		self.running=False
 		for sock in self.socket_list:
