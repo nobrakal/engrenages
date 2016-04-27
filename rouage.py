@@ -17,12 +17,11 @@ from tkinter import *
 
 def diff_pseudo(liste1, liste2):
 	"""
-	Compare et fusionne deux listes de pseudos
+	Compare et retourne la fusion des deux listes et les différences entre liste1 et liste2.
 	"""
-	nouv_liste=liste1
-	if liste1 == liste2: # Compare les deux listes, quelque soit leur ordre.
+	liste_new=[]
+	if set(liste1) == set(liste2): # Compare les deux listes.
 		isNew=False
-
 	else:
 		isNew=True
 		for i in range(len(liste2)):
@@ -30,12 +29,10 @@ def diff_pseudo(liste1, liste2):
 			for j in range(len(liste1)):
 				if liste1[j]==liste2[i]:
 					OK=0
-		
 			if OK==1:
-				nouv_liste=nouv_liste+[liste2[i]]
-				
+				liste_new.append(liste2[i])
 	
-	return (isNew,nouv_liste)
+	return (isNew,liste1+liste_new, liste_new)
 
 class Rouage(threading.Thread):
 	"""Class principale, héritée de Thread, permettant d'émettre et de recevoir des connections. En d'autres mots, elle regroupe client et serveur"""
@@ -122,7 +119,6 @@ class Rouage(threading.Thread):
 											for x in data[1][1]: # On vérifie la présence de tous les anciens connectés
 												if x != self.pseudo and x not in self.local_pseudo_list:
 													self.pseudo_list.remove(x)
-													self.sendTimedMessage(["IS_ALIVE",x,False],"SYSTEM")
 													self.update_msg_text(x+" semble être déconnecté...") # Affiche le message de connection.
 											self.update_StringVar_pseudo_list()
 											self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
@@ -137,12 +133,13 @@ class Rouage(threading.Thread):
 											self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 										elif data[1][0] == "NEW_CONN": # Message système, reception d'un nouveau pseudo
-											isNew, diff = diff_pseudo(data[1][1],self.pseudo_list)
+											isNew,nouv_liste, diff = diff_pseudo(self.pseudo_list,data[1][1])
 											if isNew == True: # L'utilisateur n'est pas encore connecté au réseau
 												if data[2] not in self.pseudo_list:
-													self.pseudo_list.append(data[2])
+													self.pseudo_list = nouv_liste
 													self.update_StringVar_pseudo_list()
-													self.update_msg_text(data[2]+" est maintenant connecté") # Affiche le message de connection
+													for x in diff:
+														self.update_msg_text(x+" est maintenant connecté") # Affiche le message de connection
 													self.sendTimedMessage(self.pseudo_list,"SYSTEM") # Envoi à tout le monde sa liste, mise à jour.
 												else:
 													self.sendTimedMessage("DISCONNECT_BAD_PSEUDO","SYSTEM", [sock]) # déconnecte de force, le nouvel arrivé à déjà un pseudo existant.
@@ -151,7 +148,9 @@ class Rouage(threading.Thread):
 													self.sendTimedMessage("Hi","SYSTEM",[sock])# Permet à sock de nous ajouter à sa liste de directement connectés.
 
 										else: # Récéption d'une liste de pseudo unique
-											isNew, self.pseudo_list = diff_pseudo(data[1],self.pseudo_list)
+											isNew, self.pseudo_list,diff = diff_pseudo(self.pseudo_list,data[1])
+											for x in diff:
+												self.update_msg_text(x+" est maintenant connecté") # Affiche le message de connection
 											if isNew:
 												self.sendTimedMessage(self.pseudo_list,"SYSTEM")
 											self.update_StringVar_pseudo_list()
