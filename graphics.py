@@ -29,17 +29,17 @@ def MP(rouage):
 
 	MainFrame = Frame(Message_prive,borderwidth=3,relief=GROOVE) #crée la sous-fenêtre principale
 	MainFrame.pack(padx=10,pady=10) #instruction plaçant la sous-fenêtre principale dans la fenêtre
-	
+
 	Label1 = Label(MainFrame, text = "Quel est le pseudo de l'utilisateur à qui vous souhaitez envoyer un message?", fg = 'black') # crée une zone de texte dans la sous-fenêtre principale
 	Label1.pack(padx=5,pady=5) #instruction plaçant la zone de texte dans la sous-fenêtre principale
 
 	ChoixPseudo = Entry(MainFrame, bg ='white', fg='grey') #crée une zone de saisie de texte par l'utilisateur
 	ChoixPseudo.focus_set()
 	ChoixPseudo.pack(padx=5, pady=5) #instruction plaçant la zone de saisie de texte dans la sous-fenêtre principale
-	
+
 	Label2 = Label(MainFrame, text = "Quel est votre message?", fg = 'black') # crée une zone de texte dans la sous-fenêtre principale
 	Label2.pack(padx=5,pady=5) #instruction plaçant la zone de texte dans la sous-fenêtre principale
-	
+
 	Message = Entry(MainFrame, bg ='white', fg='grey') #crée une zone de saisie de texte par l'utilisateur
 	Message.pack(padx=5, pady=5) #instruction plaçant la zone de saisie de texte dans la sous-fenêtre principale
 
@@ -122,10 +122,10 @@ def choisir_ip(rouage, port_serveur):
 	Champ = Entry(Frame1, bg ='white', fg='grey')
 	Champ.focus_set()
 	Champ.pack(padx=5, pady=5)
-	
+
 	Label2 = Label(Frame1, text = "Quel port souhaitez-vous utiliser?", fg = 'black')
 	Label2.pack(padx=5,pady=5)
-	
+
 	Port = Entry(Frame1, bg ='white', fg='grey')
 	Port.focus_set()
 	Port.pack(padx=5, pady=5)
@@ -134,7 +134,7 @@ def choisir_ip(rouage, port_serveur):
 	Bouton1.pack(padx = 5, pady=5)
 
 	Nouvelle_connection.mainloop() #permet de signifier que le programme de création de la fenêtre est fini
-	
+
 def fenetre_princ(pseudo, rouage, port_serveur):
 	Engrenages = Tk()
 	Engrenages.title('Engrenages:'+ pseudo)
@@ -159,7 +159,7 @@ def fenetre_princ(pseudo, rouage, port_serveur):
 
 	FrameConnected = LabelFrame(bg='white', text="Utilisateurs connectés")
 	FrameConnected.grid(row=1,column=4,rowspan = 2, sticky = S, padx=5, pady=5)
-	
+
 	Framedisconnect = Frame(bg='lightgrey')
 	Framedisconnect.grid(row=3, column=4, padx=5, pady=5)
 
@@ -169,10 +169,10 @@ def fenetre_princ(pseudo, rouage, port_serveur):
 
 	Bouton4 = Button(FrameConnected, text = 'Nouvelle connexion', command =lambda: choisir_ip(rouage, port_serveur) )
 	Bouton4.pack(padx=5, pady=5)
-	
+
 	Framenewmessage = Frame(bg='lightgrey')
 	Framenewmessage.grid(row=3, column=1, padx=5,pady=5)
-	
+
 	Label6 = Label(Framenewmessage, text = 'Votre message:', fg = 'black', bg="lightgrey")
 	Label6.grid(padx=5,pady=5, row=0, column=0)
 
@@ -186,7 +186,7 @@ def fenetre_princ(pseudo, rouage, port_serveur):
 
 	Bouton2 = Button(Framedisconnect, text = 'Quitter', command =lambda: destroy_and_quit(Engrenages,rouage))
 	Bouton2.pack(padx=5, pady=5)
-	
+
 	Bouton3 = Button(Engrenages, text = 'Message Privé', command =lambda: MP(rouage) )
 	Bouton3.grid(row=3,column=0)
 

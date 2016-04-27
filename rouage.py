@@ -31,7 +31,7 @@ def diff_pseudo(liste1, liste2):
 					OK=0
 			if OK==1:
 				liste_new.append(liste2[i])
-	
+
 	return (isNew,liste1+liste_new, liste_new)
 
 class Rouage(threading.Thread):
