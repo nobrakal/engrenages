@@ -54,6 +54,8 @@ def check_pseudo(pseudo, fenetre):
 	"""
 	if pseudo == "":
 		showwarning("Attention !", "Vous devez entrer un pseudo valide pour vous connecter !")
+	elif pseudo == "":
+		showwarning("Attention !", "L'utilisation du pseudo SYSTEM est prohibé")
 	else:
 		fenetre.destroy()
 

@@ -27,7 +27,11 @@ if args.pseudo == None:
 		pseudo = identification(rouage)
 
 else:
-	pseudo = args.pseudo
+	if args.pseudo != "SYSTEM":
+		pseudo = args.pseudo
+	else:
+		rouage.quit()
+		raise SystemExit
 
 rouage.pseudo = pseudo
 rouage.pseudo_list.append(pseudo)
