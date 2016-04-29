@@ -38,14 +38,16 @@ class Rouage(threading.Thread):
 	"""Class principale, héritée de Thread, permettant d'émettre et de recevoir des connections. En d'autres mots, elle regroupe client et serveur"""
 
 	def __init__(self, port_serveur,backlog,size):
-
 		self.pseudo = None
 
 		self.port_serveur = port_serveur
 		self.backlog=backlog
 		self.size=size
 
-		self.running=False
+		self.running = False
+
+		self.gui = False
+		self.debug = False
 
 		self.socket_list = []
 		self.id_list=[]
@@ -82,8 +84,9 @@ class Rouage(threading.Thread):
 					# Reception des données...
 					data = sock.recv(self.size)
 					if data:
-						data = pickle.loads(data) # Décodage de ces données
-						print(str(data))
+						data = pickle.loads(data) # Décodage de ces données	
+						if self.debug == True:
+							print(str(data))
 						if data[0] not in self.id_list: # data[0] correspond à l'id du message
 							self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
 
@@ -178,12 +181,13 @@ class Rouage(threading.Thread):
 
 			self.sendTimedMessage(["NEW_CONN",self.pseudo_list],"SYSTEM",[ysock]) # Envoi son pseudo au serveur distant, pour vérification
 		except Exception as e:
-				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. l'exception est %s" % (ip,port, e))
+				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. L'exception est %s" % (ip,port, e))
 
 	def sendTimedMessage(self, msg, destinataire="",socket_list="DEFAULT"):
 		"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste. Si destinataire est défini, le message ne sera lu que par la personne
 		portant le pseudo mis dans destinataire"""
-		print(str(msg))
+		if self.debug == True:
+			print(str(msg))
 		if socket_list == "DEFAULT":
 			socket_list = self.socket_list[1:]
 		time = str(datetime.datetime.now())+str(randint(10,99))
@@ -205,10 +209,8 @@ class Rouage(threading.Thread):
 		"""
 		Met à jour graphiquement la liste de pseudo
 		"""
-		while isinstance(self.StringVar_pseudo_list,StringVar) == False: # Attends l'initialisation de la fenêtre graphique
-			pass
-		if isinstance(self.StringVar_pseudo_list,StringVar): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
-			j = ""
+		j = ""
+		if self.gui == True:
 			for i in self.pseudo_list:
 				j += i+"\n"
 			self.StringVar_pseudo_list.set(j) # Affiche la liste de pseudos
@@ -217,12 +219,12 @@ class Rouage(threading.Thread):
 		"""
 		Met à jour la liste des messages. Prend en argument new_message, un string.
 		"""
-		while isinstance(self.msg_text,Text) == False: # Attends l'initialisation de la fenêtre graphique
-			pass
-		if isinstance(self.msg_text,Text): # Vérifie que la variable a bien été initialisée dans la fenêtre principale
+		if self.gui == True:
 			self.msg_text.config(state=NORMAL)
 			self.msg_text.insert(END,new_message+"\n")
 			self.msg_text.config(state=DISABLED)
+		else:
+			print(new_message)
 
 	def quit(self, forced=False):
 		if forced != True:

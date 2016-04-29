@@ -193,3 +193,14 @@ def fenetre_princ(pseudo, rouage, port_serveur):
 	Bouton3.grid(row=3,column=0)
 
 	Engrenages.mainloop() #permet de signifier que le programme de création de la fenêtre est fini
+
+##### Fenêtre texte #####
+def txt_princ(pseudo,rouage):
+	print("Bienvenue dans engrenages, tapez \quit pour quitter")
+	while 1:
+		msg = input("Entrez votre message: ")
+		if msg == "\quit":
+			rouage.quit()
+			return 0
+		else:
+			rouage.sendTimedMessage(msg)
