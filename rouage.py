@@ -214,6 +214,11 @@ class Rouage(threading.Thread):
 			for i in self.pseudo_list:
 				j += i+"\n"
 			self.StringVar_pseudo_list.set(j) # Affiche la liste de pseudos
+		else:
+			self.StringVar_pseudo_list.clear()
+			for i in self.pseudo_list:
+				self.StringVar_pseudo_list.addstr(i+"\n") # Affiche la liste de pseudos
+			self.StringVar_pseudo_list.refresh()
 
 	def update_msg_text(self, new_message):
 		"""
@@ -223,9 +228,10 @@ class Rouage(threading.Thread):
 			self.msg_text.config(state=NORMAL)
 			self.msg_text.insert(END,new_message+"\n")
 			self.msg_text.config(state=DISABLED)
-			self.msg_text.see(END)
+			self.msg_text.see(END) # Autoscroll des messages
 		else:
-			print(new_message)
+			self.msg_text.addstr(new_message+"\n")
+			self.msg_text.refresh()
 
 	def quit(self, forced=False):
 		if forced != True:
