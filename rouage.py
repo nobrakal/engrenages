@@ -223,6 +223,7 @@ class Rouage(threading.Thread):
 			self.msg_text.config(state=NORMAL)
 			self.msg_text.insert(END,new_message+"\n")
 			self.msg_text.config(state=DISABLED)
+			self.msg_text.see(END)
 		else:
 			print(new_message)
 
