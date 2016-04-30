@@ -230,7 +230,13 @@ class Rouage(threading.Thread):
 			self.msg_text.config(state=DISABLED)
 			self.msg_text.see(END) # Autoscroll des messages
 		else:
-			self.msg_text.addstr(new_message+"\n")
+			if self.msg_text.getyx()[0] >= self.msg_text.getmaxyx()[0]-1: # Permet de scroller au bout de 15 lignes
+				for x in range((len(new_message.splitlines())/self.msg_text.getmaxyx()[1]).__trunc__() +1): # Évite les messages trop long
+					self.msg_text.move(0,0)
+					self.msg_text.deleteln()
+				self.msg_text.addstr(self.msg_text.getmaxyx()[0]-((len(new_message.splitlines())/self.msg_text.getmaxyx()[1]).__trunc__() +1),0,new_message)
+			else:
+				self.msg_text.addstr(new_message+"\n")
 			self.msg_text.refresh()
 
 	def quit(self, forced=False):
