@@ -17,7 +17,6 @@ parser.add_argument("--gui", help="Si 1, lance engrenages en mode graphique (DEF
 parser.add_argument("--debug", help="Si 1, lance engrenages en mode debug, si 0 lance engrenages normalement (DEFAUT)")
 args = parser.parse_args()
 
-global gui
 if args.gui == None:
 	gui = True
 else:

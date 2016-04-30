@@ -29,24 +29,26 @@ def txt_princ(pseudo,rouage):
 		message=editwin.getstr(0,0).decode(encoding="utf-8")
 
 		msg = message.split() # Transforme le message en tableau de string.
+		if len(msg)>=1:
+			if msg[0] == "\quit":
+				running=False
 
-		if msg[0] == "\quit":
-			running=False
-		elif msg[0] == "\mp":
-			content=""
-			if len(msg) >= 3:
-				if msg[1] != "SYSTEM":
-						for x in range(len(msg[2:])):
-							content += msg[2+x]+" " # Concatène
-						rouage.sendTimedMessage(content,msg[1])
-		elif msg[0] == "\connect":
-			if len(msg) >= 3 and msg[2].isallnum(): # Vérifie que tous les arguments sont présetns et que le port est un nombre.
-				rouage.ConnectNewServer(msg[1],int(msg[2]))
+			elif msg[0] == "\mp":
+				content=""
+				if len(msg) >= 3:
+					if msg[1] != "SYSTEM":
+							for x in range(len(msg[2:])):
+								content += msg[2+x]+" " # Concatène
+							rouage.sendTimedMessage(content,msg[1])
 
-		elif msg[0] == "\help":
-			rouage.update_msg_text("Aide:\n Tapez votre message puis entrée pour l'envoyer\n Tapez \quit pour quitter\n Tapez \mp destinataire votre message pour envoyer un message privé\n Tapez \connect ip port pour vous connecter")
+			elif msg[0] == "\connect":
+				if len(msg) >= 3 and msg[2].isalnum(): # Vérifie que tous les arguments sont présetns et que le port est un nombre.
+					rouage.ConnectNewServer(msg[1],int(msg[2]))
 
-		else:
-			rouage.sendTimedMessage(message)
+			elif msg[0] == "\help":
+				rouage.update_msg_text("Aide:\n Tapez votre message puis entrée pour l'envoyer\n Tapez \quit pour quitter\n Tapez \mp destinataire votre message pour envoyer un message privé\n Tapez \connect ip port pour vous connecter")
+	
+			else:
+				rouage.sendTimedMessage(message)
 	curses.endwin()
 	rouage.quit()

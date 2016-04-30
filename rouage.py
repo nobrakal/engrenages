@@ -77,7 +77,8 @@ class Rouage(threading.Thread):
 				if sock == self.s:
 					newsocket, addr = self.s.accept()
 					self.socket_list.append(newsocket)
-					print("Client connecté, d'adresse: "+str(addr[0]))
+					if self.debug == True:
+						print("Client connecté, d'adresse: "+str(addr[0]))
 
 				# Un message d'un client existant
 				else:
@@ -166,7 +167,7 @@ class Rouage(threading.Thread):
 						if sock in self.socket_list:
 							self.socket_list.remove(sock)
 							sock.close()
-						print("Client perdu")
+						self.update_msg_text("Client perdu")
 
 	def ConnectNewServer(self, ip, port):
 		"""
@@ -181,7 +182,7 @@ class Rouage(threading.Thread):
 
 			self.sendTimedMessage(["NEW_CONN",self.pseudo_list],"SYSTEM",[ysock]) # Envoi son pseudo au serveur distant, pour vérification
 		except Exception as e:
-				print("CLIENT: Quelque chose s'est mal passé avec %s:%d. L'exception est %s" % (ip,port, e))
+				self.update_msg_text("CLIENT: Quelque chose s'est mal passé avec %s:%d. L'exception est %s" % (ip,port, e))
 
 	def sendTimedMessage(self, msg, destinataire="",socket_list="DEFAULT"):
 		"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste. Si destinataire est défini, le message ne sera lu que par la personne
@@ -231,10 +232,12 @@ class Rouage(threading.Thread):
 			self.msg_text.see(END) # Autoscroll des messages
 		else:
 			if self.msg_text.getyx()[0] >= self.msg_text.getmaxyx()[0]-1: # Permet de scroller au bout de 15 lignes
-				for x in range((len(new_message.splitlines())/self.msg_text.getmaxyx()[1]).__trunc__() +1): # Évite les messages trop long
+				for x in range((len(new_message)/self.msg_text.getmaxyx()[1]).__trunc__() + 1): # Évite les messages trop long
 					self.msg_text.move(0,0)
 					self.msg_text.deleteln()
-				self.msg_text.addstr(self.msg_text.getmaxyx()[0]-((len(new_message.splitlines())/self.msg_text.getmaxyx()[1]).__trunc__() +1),0,new_message)
+				self.msg_text.addstr(self.msg_text.getmaxyx()[0]-(((len(new_message)/self.msg_text.getmaxyx()[1])+1).__trunc__() + 1),0,new_message+"\n")			
+				self.msg_text.move(self.msg_text.getmaxyx()[0]-1,0)
+
 			else:
 				self.msg_text.addstr(new_message+"\n")
 			self.msg_text.refresh()
