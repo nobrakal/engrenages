@@ -103,6 +103,8 @@ def connect_and_destroy(ip,port,fenetre,rouage):
 		showwarning("Attention !", "Vous ne pouvez pas vous connecter à une ip vide")
 	elif port == "":
 		showwarning("Attention !", "Vous ne pouvez pas vous connecter sur un port vide")
+	elif port.isalnum == False:
+		showwarning("Attention !", "Vous devez entrer un port en chiffre")
 	else:
 		rouage.ConnectNewServer(ip, int(port))
 		fenetre.destroy()
