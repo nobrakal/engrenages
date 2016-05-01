@@ -13,8 +13,8 @@ from graphicsCurses import *
 parser = argparse.ArgumentParser() # Prend en compte les arguments
 parser.add_argument("--pseudo", help="Lance engrengages avec un pseudo")
 parser.add_argument("--port",default=6666, help="Lance engrengages sur le port précisé")
-parser.add_argument("--nogui",nargs="?",const=True,default=False, help="Si spécifié, lance engrenages en mode text")
-parser.add_argument("--debug",nargs="?",const=True,default=False, help="Si spécifié, lance engrenages en mode debug")
+parser.add_argument("--nogui",action='store_true', help="Si spécifié, lance engrenages en mode text")
+parser.add_argument("--debug",action='store_true', help="Si spécifié, lance engrenages en mode debug")
 args = parser.parse_args()
 
 if args.nogui:
@@ -39,6 +39,9 @@ else:
 	else:
 		rouage.quit()
 		raise SystemExit
+
+if pseudo == "":
+	raise SystemExit
 
 rouage.pseudo = pseudo
 rouage.pseudo_list.append(pseudo)

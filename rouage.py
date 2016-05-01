@@ -62,8 +62,6 @@ class Rouage(threading.Thread):
 		self.s.bind(('',self.port_serveur))
 		self.s.listen(backlog)
 
-		self.socket_list.append(self.s)
-
 		threading.Thread.__init__(self)
 
 	def run(self):
@@ -71,7 +69,7 @@ class Rouage(threading.Thread):
 		self.running=True
 		while self.running:
 			# prend une liste des socket prêt à être lu.
-			ready_to_read, ready_to_write, in_error = select.select(self.socket_list,self.socket_list,[],0.1)
+			ready_to_read, ready_to_write, in_error = select.select([self.s]+self.socket_list,self.socket_list,[],0.1)
 			for sock in ready_to_read:
 				# Une nouvelle connection!
 				if sock == self.s:
@@ -82,6 +80,7 @@ class Rouage(threading.Thread):
 
 				# Un message d'un client existant
 				else:
+					#print(str(self.socket_list)+str(sock.fileno()))
 					# Reception des données...
 					data = sock.recv(self.size)
 					if data:
@@ -96,12 +95,12 @@ class Rouage(threading.Thread):
 
 							if data[3] == "": # Message non privé
 								self.update_msg_text(data[2]+": "+data[1]) # Affiche le message
-								self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+								self.sendMessage(data, sock.fileno()) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 							else: #Il s'agit d'un message privé
 								if data[3] == self.pseudo: # Qui nous est destiné
 									self.update_msg_text(data[2]+" vous chuchotte: "+data[1]) # Affiche le message
-									self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+									self.sendMessage(data, sock.fileno()) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 								elif data[3] == "SYSTEM": # Message système, reception d'un pseudo, ou d'une liste de pseudo
 
@@ -109,12 +108,12 @@ class Rouage(threading.Thread):
 										self.update_msg_text("Déconnection générale, mauvais pseudo.") # Affiche le message de déconnection
 										self.quit(forced=True)
 
-									elif data[1] == "HI":
+									elif data[1] == "ALIVE":
 										if data[2] not in self.pseudo_list:
 											self.pseudo_list.append(data[2])
 											self.update_StringVar_pseudo_list()
 											self.update_msg_text(str(data[2])+" est bien connecté au réseau") # Affiche le message de connection.
-										self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+										self.sendMessage(data, sock.fileno()) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 									elif type(data[1]) is list:
 										if data[1][0] == "DISCONNECT":
@@ -124,13 +123,13 @@ class Rouage(threading.Thread):
 												self.socket_list.remove(sock)
 												sock.close
 												self.local_pseudo_list.remove(data[2])
-												self.sendTimedMessage("HI","SYSTEM") # On prévient les autres que l'on est toujours connectés.
+												self.sendTimedMessage("ALIVE","SYSTEM") # On prévient les autres que l'on est toujours connectés.
 											for x in data[1][1]: # On vérifie la présence de tous les anciens connectés
 												if x != self.pseudo and x not in self.local_pseudo_list:
 													self.pseudo_list.remove(x)
 													self.update_msg_text(x+" semble être déconnecté...")
 											self.update_StringVar_pseudo_list()
-											self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+											self.sendMessage(data, sock.fileno()) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 										elif data[1][0] == "NEW_CONN": # Message système, reception d'un nouveau pseudo
 											isNew,nouv_liste, diff = diff_pseudo(self.pseudo_list,data[1][1])
@@ -156,14 +155,15 @@ class Rouage(threading.Thread):
 											self.update_StringVar_pseudo_list()
 
 								else: # Les message n'est pas pour nous, on fait tourner
-									self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+									self.sendMessage(data, sock.fileno()) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 					else:
 					# Il n'y a rien, le client est sans doute déconnecté
 						if sock in self.socket_list:
 							self.socket_list.remove(sock)
 							sock.close()
-						self.update_msg_text("Client perdu")
+						if self.debug == True:
+							self.update_msg_text("Client perdu")
 
 	def ConnectNewServer(self, ip, port):
 		"""
@@ -184,9 +184,9 @@ class Rouage(threading.Thread):
 		"""Envoi un message avec son id, le temps, à la liste de socket. Ajoute l'id à la liste. Si destinataire est défini, le message ne sera lu que par la personne
 		portant le pseudo mis dans destinataire"""
 		if self.debug == True:
-			print(str(msg))
+			print(str(len(self.socket_list)))
 		if socket_list == "DEFAULT":
-			socket_list = self.socket_list[1:]
+			socket_list = self.socket_list.copy()
 		time = str(datetime.datetime.now())+str(randint(10,99))
 		self.id_list.append(time) # Ajoute notre propre message à la liste des messages envoyés
 		if destinataire == "":
@@ -196,12 +196,16 @@ class Rouage(threading.Thread):
 		for sock in socket_list:
 			sock.send(pickle.dumps([time,msg,self.pseudo,destinataire,1])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
 
-	def sendMessage(self, msg, socket_list):
+	def sendMessage(self, msg, prec_sock,socket_list="DEFAULT"):
 		"""Envoi un message à la liste de socket"""
+		if socket_list == "DEFAULT":
+			socket_list = self.socket_list.copy()
 		msg[4] += 1 # Incrémente l'éloignement
-		print(str(msg)+str(len(socket_list)))
+		if self.debug:
+			print(str(msg)+str(len(socket_list)))
 		for sock in socket_list:
-			sock.send(pickle.dumps(msg)) # Envoi du message.
+			if sock.fileno() != prec_sock:
+				sock.send(pickle.dumps(msg)) # Envoi du message.
 
 	def update_StringVar_pseudo_list(self):
 		"""
