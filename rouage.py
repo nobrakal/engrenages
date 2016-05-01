@@ -8,7 +8,7 @@ import datetime
 from random import randint
 
 from tkinter import *
-
+ 
 ##########################################
 #
 # Création de la class Rouage et des ses dépendances
@@ -109,6 +109,13 @@ class Rouage(threading.Thread):
 										self.update_msg_text("Déconnection générale, mauvais pseudo.") # Affiche le message de déconnection
 										self.quit(forced=True)
 
+									elif data[1] == "HI":
+										if data[2] not in self.pseudo_list:
+											self.pseudo_list.append(data[2])
+											self.update_StringVar_pseudo_list()
+											self.update_msg_text(str(data[2])+" est bien connecté au réseau") # Affiche le message de connection.
+										self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
+
 									elif type(data[1]) is list:
 										if data[1][0] == "DISCONNECT":
 											self.update_msg_text(data[2]+" est déconnecté") # Affiche le message de déconnection
@@ -117,23 +124,12 @@ class Rouage(threading.Thread):
 												self.socket_list.remove(sock)
 												sock.close
 												self.local_pseudo_list.remove(data[2])
-												for x in data[1][1]: # On vérifie la présence de tous les anciens connectés
-													if x != self.pseudo and x not in self.local_pseudo_list:
-														self.sendTimedMessage(["IS_ALIVE",x,False],"SYSTEM")
+												self.sendTimedMessage("HI","SYSTEM") # On prévient les autres que l'on est toujours connectés.
 											for x in data[1][1]: # On vérifie la présence de tous les anciens connectés
 												if x != self.pseudo and x not in self.local_pseudo_list:
 													self.pseudo_list.remove(x)
-													self.update_msg_text(x+" semble être déconnecté...") # Affiche le message de connection.
+													self.update_msg_text(x+" semble être déconnecté...")
 											self.update_StringVar_pseudo_list()
-											self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
-
-										elif data[1][0] == "IS_ALIVE":
-											if data[1][1] == self.pseudo:
-												self.sendTimedMessage(["IS_ALIVE",self.pseudo,True],"SYSTEM")
-											elif data[1][2] == True and data[1][1] not in self.pseudo_list:
-												self.pseudo_list.append(data[1][1])
-												self.update_StringVar_pseudo_list()
-												self.update_msg_text(str(data[1][1])+" est bien connecté au réseau") # Affiche le message de connection.
 											self.sendMessage(data, self.socket_list[1:]) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 										elif data[1][0] == "NEW_CONN": # Message système, reception d'un nouveau pseudo
@@ -203,6 +199,7 @@ class Rouage(threading.Thread):
 	def sendMessage(self, msg, socket_list):
 		"""Envoi un message à la liste de socket"""
 		msg[4] += 1 # Incrémente l'éloignement
+		print(str(msg)+str(len(socket_list)))
 		for sock in socket_list:
 			sock.send(pickle.dumps(msg)) # Envoi du message.
 
