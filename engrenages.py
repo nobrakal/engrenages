@@ -8,7 +8,10 @@ import argparse
 
 from rouage import *
 from graphicsTk import *
-from graphicsCurses import *
+try:
+	from graphicsCurses import *
+except:
+	pass
 
 parser = argparse.ArgumentParser() # Prend en compte les arguments
 parser.add_argument("--pseudo", help="Lance engrengages avec un pseudo")
