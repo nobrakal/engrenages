@@ -99,7 +99,7 @@ class Rouage(threading.Thread):
 
 							else: #Il s'agit d'un message privé
 								if data[3] == self.pseudo: # Qui nous est destiné
-									self.update_msg_text(data[2]+" vous chuchotte: "+data[1]) # Affiche le message
+									self.update_msg_text(data[2]+" vous chuchote: "+data[1]) # Affiche le message
 									self.sendMessage(data, sock.fileno()) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
 								elif data[3] == "SYSTEM": # Message système, reception d'un pseudo, ou d'une liste de pseudo
