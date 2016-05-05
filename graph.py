@@ -24,13 +24,15 @@ class Graph:
 		"""
 		index=self.pseudo_list.index(pseudo)
 		index2=self.pseudo_list.index(pseudo2)
-		self.graphique[index][index2]=True
-		self.graphique[index2][index]=True
+		if index != index2: # Empêche les connexions à soi-même
+			self.graphique[index][index2]=True
+			self.graphique[index2][index]=True
 
 	def remove(self, pseudo):
 		"""
 		Supprime un pseudo du graph
 		"""
+		removed=[]
 		pseudo_index=self.pseudo_list.index(pseudo)
 		for a in range(len(self.pseudo_list)):
 			self.graphique[a].pop(pseudo_index)
@@ -39,4 +41,6 @@ class Graph:
 		for x in range(len(self.pseudo_list)):
 			if True not in self.graphique[x]:# Un utilisateur plus connecté à personne
 				self.graphique.pop(x)
-				self.pseudo_list.pop(x)
+				removed.append(self.pseudo_list.pop(x))
+
+		return removed
