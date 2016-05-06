@@ -168,13 +168,12 @@ class Rouage(threading.Thread):
 		elif destinataire != "" and destinataire != "SYSTEM": # N'affiche pas messages privés
 			self.update_msg_text("Vous chuchotez à "+destinataire+": "+msg) # Affiche le message
 		for sock in socket_list:
-			sock.send(pickle.dumps([time,msg,self.pseudo,destinataire,1])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
+			sock.send(pickle.dumps([time,msg,self.pseudo,destinataire])) # Envoi le temps afin d'éviter les boucles d'envoi infinies (=id du message), plus le message
 
 	def sendMessage(self, msg, prec_sock,socket_list="DEFAULT"):
 		"""Envoi un message à la liste de socket"""
 		if socket_list == "DEFAULT":
 			socket_list = self.socket_list.copy()
-		msg[4] += 1 # Incrémente l'éloignement
 		if self.debug:
 			print(str(msg)+str(len(socket_list)))
 		for sock in socket_list:
