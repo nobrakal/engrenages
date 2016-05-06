@@ -63,7 +63,8 @@ class Rouage(threading.Thread):
 
 				# Un message d'un client existant
 				else:
-					#print(str(self.graph.pseudo_list)+str(self.graph.graphique))
+					if self.debug:
+						print(str(self.graph.pseudo_list)+str(self.graph.graphique))
 					# Reception des données...
 					try: 
 						data = sock.recv(self.size)
@@ -116,6 +117,8 @@ class Rouage(threading.Thread):
 												else:
 													self.sendTimedMessage("DISCONNECT_BAD_PSEUDO","SYSTEM", [sock]) # déconnecte de force, le nouvel arrivé à déjà un pseudo existant.
 											else:
+													self.graph.connect(data[2],self.pseudo) # On se connecte avec notre nouvel arrivant
+													self.sendTimedMessage(self.graph,"SYSTEM") # Envoi à tout le monde sa liste, mise à jour.
 													self.update_msg_text(data[2]+" est maintenant directement connecté, le réseau est plus fort !") # Affiche le message de connection
 
 									elif isinstance(data[1], Graph): # Récéption d'un graph
@@ -233,10 +236,10 @@ class Rouage(threading.Thread):
 				if graph2.pseudo_list[i] not in newgraph.pseudo_list:
 					newgraph.add(graph2.pseudo_list[i])
 					liste_new.append(graph2.pseudo_list[i])
-			for i in range(len(graph2.pseudo_list)):
-				for x in range(len(graph2.graphique[i])):
-					if graph2.graphique[i][x] == True:
-						newgraph.connect(graph2.pseudo_list[i],graph2.pseudo_list[x])
+		for i in range(len(graph2.pseudo_list)):
+			for x in range(len(graph2.graphique[i])):
+				if graph2.graphique[i][x] == True:
+					newgraph.connect(graph2.pseudo_list[i],graph2.pseudo_list[x])
 		return (isNew, isGood, newgraph, liste_new)
 
 	def quit(self, forced=False):
