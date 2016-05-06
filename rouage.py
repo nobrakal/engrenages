@@ -36,7 +36,6 @@ class Rouage(threading.Thread):
 
 		self.socket_list = []
 		self.id_list=[]
-		self.local_pseudo_list = []
 
 		self.msg_text = None # Le type sera changé par fentere_princ()
 		self.StringVar_pseudo_list = None
@@ -64,22 +63,20 @@ class Rouage(threading.Thread):
 
 				# Un message d'un client existant
 				else:
+					#print(str(self.graph.pseudo_list)+str(self.graph.graphique))
 					# Reception des données...
 					try: 
 						data = sock.recv(self.size)
 					except:
 						if self.debug:
 							print("Déconnexion brutale d'un serveur...")
+							pass
 					if data:
 						data = pickle.loads(data) # Décodage de ces données	
 						if self.debug == True:
 							print(str(data))
 						if data[0] not in self.id_list: # data[0] correspond à l'id du message
-							print(str(self.graph.pseudo_list)+str(self.graph.graphique))
 							self.id_list.append(data[0]) # Ajoute l'id du message, il ne sera pas rééaffiché en cas de nouvelle récéption
-
-							if data[4] == 1 and data[2] not in self.local_pseudo_list: # Si le message viens d'un client local, et que l'on ne le connait pas, on l'ajoute.
-								self.local_pseudo_list.append(data[2])
 
 							if data[3] == "": # Message non privé
 								self.update_msg_text(data[2]+": "+data[1]) # Affiche le message
@@ -101,7 +98,7 @@ class Rouage(threading.Thread):
 										removed =self.graph.remove(data[2])
 										if removed != []:
 											for x in removed:
-												self.update_msg_text("Ainsi que "+x) # Affiche le message de déconnection
+												self.update_msg_text(x+" est déconnecté") # Affiche le message de déconnection
 										self.update_StringVar_pseudo_list()
 										self.sendMessage(data, sock.fileno()) # Renvoi le message aux autres serveurs, afin d'assurer une propagation optimale
 
@@ -114,13 +111,12 @@ class Rouage(threading.Thread):
 													self.graph.connect(data[2],self.pseudo) # On se connecte avec notre nouvel arrivant
 													self.update_StringVar_pseudo_list()
 													for x in diff:
-														self.update_msg_text("Ainsi que "+x) # Affiche le message de connection
+														self.update_msg_text(x+" est maintenant connecté") # Affiche le message de connection
 													self.sendTimedMessage(self.graph,"SYSTEM") # Envoi à tout le monde sa liste, mise à jour.
 												else:
 													self.sendTimedMessage("DISCONNECT_BAD_PSEUDO","SYSTEM", [sock]) # déconnecte de force, le nouvel arrivé à déjà un pseudo existant.
 											else:
 													self.update_msg_text(data[2]+" est maintenant directement connecté, le réseau est plus fort !") # Affiche le message de connection
-													self.sendTimedMessage("Hi","SYSTEM",[sock])# Permet à sock de nous ajouter à sa liste de directement connectés.
 
 									elif isinstance(data[1], Graph): # Récéption d'un graph
 										isNew, isGood, self.graph, diff = self.diff_graph(data[1])
