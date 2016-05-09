@@ -6,7 +6,7 @@ class Graph:
 	"""
 	Classe permettant de gérer le graphique représentant les connexions du réseau.
 	"""
-	def __init__(self):
+	def __init__(self): # Initialisation
 		self.pseudo=None
 		self.pseudo_list=[]
 		self.graphique=[[True]]
@@ -16,8 +16,6 @@ class Graph:
 		Ajoute un pseudo au graph
 		"""
 		self.pseudo_list.append(pseudo)
-		#for a in range(len(self.pseudo_list)-1): # On ajoute une colonne aux lignes existantes
-		#	self.graphique[a].append(False)
 		self.graphique.append([False]*len(self.pseudo_list)) # On ajoute une ligne "vide" que l'on modifiera après
 
 	def connect(self, pseudo,pseudo2):

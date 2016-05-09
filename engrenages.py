@@ -10,8 +10,9 @@ from rouage import *
 from graphicsTk import *
 try:
 	from graphicsCurses import *
+	gui=-2
 except:
-	pass
+	gui = False
 
 parser = argparse.ArgumentParser() # Prend en compte les arguments
 parser.add_argument("--pseudo", help="Lance engrengages avec un pseudo")
@@ -20,13 +21,18 @@ parser.add_argument("--nogui",action='store_true', help="Si spécifié, lance en
 parser.add_argument("--debug",action='store_true', help="Si spécifié, lance engrenages en mode debug")
 args = parser.parse_args()
 
-if args.nogui:
+rouage = Rouage(int(args.port), 10, 1024)
+
+if gui == False:
+	print("Support de curses désactivé: Problème lors de l'import.")
+	raise SystemExit
+elif gui == True:
+	print("Support de Tkinter désactivé: Problème lors de l'import.")
+	raise SystemExit	
+elif args.nogui:
 	gui = False
 else:
 	gui = True
-
-rouage = Rouage(int(args.port), 10, 1024)
-rouage.start()
 
 pseudo=""
 
@@ -51,6 +57,8 @@ rouage.graph.pseudo=pseudo
 rouage.graph.pseudo_list.append(pseudo)
 
 rouage.debug = args.debug
+
+rouage.start()
 
 if gui == True and pseudo != "":
 	rouage.gui = True

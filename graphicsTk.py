@@ -108,6 +108,8 @@ def connect_and_destroy(ip,port,fenetre,rouage):
 		showwarning("Attention !", "Vous ne pouvez pas vous connecter sur un port vide")
 	elif port.isalnum == False:
 		showwarning("Attention !", "Vous devez entrer un port en chiffre")
+	elif ip=="127.0.0.1" and port == str(rouage.port_serveur):
+		showwarning("Attention !", "On ne se connecte pas à soi même!")
 	else:
 		rouage.ConnectNewServer(ip, int(port))
 		fenetre.destroy()

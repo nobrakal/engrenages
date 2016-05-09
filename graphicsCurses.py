@@ -36,14 +36,23 @@ def txt_princ(pseudo,rouage):
 			elif msg[0] == "\mp":
 				content=""
 				if len(msg) >= 3:
-					if msg[1] != "SYSTEM":
-							for x in range(len(msg[2:])):
-								content += msg[2+x]+" " # Concatène
-							rouage.sendTimedMessage(content,msg[1])
+					if msg[1] == "SYSTEM":
+						rouage.update_msg_text("Envoi de messages au système prohibié")
+					else:
+						for x in range(len(msg[2:])):
+							content += msg[2+x]+" " # Concatène
+						rouage.sendTimedMessage(content,msg[1])
+				else:
+					rouage.update_msg_text("Problème dans la rédaction de votre message. Rappel: \mp destinataire votre message")
 
 			elif msg[0] == "\connect":
-				if len(msg) >= 3 and msg[2].isalnum(): # Vérifie que tous les arguments sont présetns et que le port est un nombre.
-					rouage.ConnectNewServer(msg[1],int(msg[2]))
+				if len(msg) >= 3 and msg[2].isalnum(): # Vérifie que tous les arguments sont présents et que le port est un nombre.
+					if msg[1] == "127.0.0.1" and msg[2] == str(rouage.port_serveur):
+						rouage.update_msg_text("On ne se connecte pas à soi même !")
+					else:
+						rouage.ConnectNewServer(msg[1],int(msg[2]))
+				else:
+					rouage.update_msg_text("Problème dans la rédaction de l'adresse. Rappel: \connect ip port")
 
 			elif msg[0] == "\help":
 				rouage.update_msg_text("Aide:\n Tapez votre message puis entrée pour l'envoyer\n Tapez \quit pour quitter\n Tapez \mp destinataire votre message pour envoyer un message privé\n Tapez \connect ip port pour vous connecter")
