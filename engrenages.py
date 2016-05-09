@@ -25,9 +25,6 @@ rouage = Rouage(int(args.port), 10, 1024)
 
 if gui == False:
 	print("Support de curses désactivé: Problème lors de l'import.")
-	raise SystemExit
-elif gui == True:
-	print("Support de Tkinter désactivé: Problème lors de l'import.")
 	raise SystemExit	
 elif args.nogui:
 	gui = False
