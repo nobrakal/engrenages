@@ -27,7 +27,6 @@ def MP(rouage):
 	"""
 	Message_prive=Tk() #définit Message_prive comme une fenêtre Tkinter
 	Message_prive.title('Engrenages') #titre de la fenêtre
-	Message_prive.geometry('450x180') #dimensions de la fenêtre
 	Message_prive['bg']='bisque' # couleur de fond
 
 	MainFrame = Frame(Message_prive,borderwidth=3,relief=GROOVE) #crée la sous-fenêtre principale
